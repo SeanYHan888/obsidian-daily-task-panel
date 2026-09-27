@@ -59,8 +59,18 @@ export const newTaskBlock = (text: string): string[][] | null => {
   return trimmed ? [[`- [ ] ${trimmed}`]] : null
 }
 
-const normalizeHeading = (heading: string) =>
+/** Heading text as a comparison key: marks dropped, case and edges ignored. */
+export const normalizeHeading = (heading: string): string =>
   heading.replace(/^#+\s*/, '').trim().toLowerCase()
+
+/**
+ * The heading line a setting names: its own marks when it carries them
+ * (`### Tasks`), level 2 otherwise (`Tasks` → `## Tasks`).
+ */
+export const headingLine = (heading: string): string => {
+  const explicitMarks = heading.trim().match(/^#{1,6}(?=\s)/)?.[0]
+  return `${explicitMarks ?? '##'} ${heading.replace(/^#+\s*/, '').trim()}`
+}
 
 /**
  * Appends blocks under the move-target heading: after the section's last
@@ -92,11 +102,9 @@ export const insertUnderHeadingAt = (
 
   if (headingIndex === -1) {
     if (!options.createMissing) return null
-    const explicitMarks = heading.trim().match(/^#{1,6}(?=\s)/)?.[0]
-    const headingLine = `${explicitMarks ?? '##'} ${heading.replace(/^#+\s*/, '').trim()}`
     const result = [...lines]
     if (result.length > 0 && result[result.length - 1].trim() !== '') result.push('')
-    result.push(headingLine, '')
+    result.push(headingLine(heading), '')
     const insertAt = result.length
     result.push(...flat)
     return {lines: result, insertAt, inserted: flat}

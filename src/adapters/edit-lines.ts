@@ -2,7 +2,7 @@ import {Notice, TFile} from 'obsidian'
 
 import {editLine, sameLine} from './lines'
 import {toJournalEntry} from '../core/journal'
-import {dateEditLabel, rescheduleLabel} from '../core/labels'
+import {dateEditLabel, plural, rescheduleLabel} from '../core/labels'
 import {
   cancelLine,
   clearDue,
@@ -57,7 +57,7 @@ const editTaskLines = async (
     })
   }
   if (stale > 0) {
-    new Notice(`Daily Task Panel: ${stale} task${stale === 1 ? '' : 's'} moved since last refresh — skipped`)
+    new Notice(`Daily Task Panel: ${plural(stale)} moved since last refresh — skipped`)
   }
   return records
 }

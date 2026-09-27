@@ -3,8 +3,8 @@ import {Notice, TFile, moment} from 'obsidian'
 import {carriageReturn, sameLine, withEnding} from './lines'
 import {relationsFromLines} from '../core/hierarchy'
 import {toJournalEntry} from '../core/journal'
-import {plural} from '../core/labels'
-import {cutTaskBlocks, insertUnderHeadingAt, newTaskBlock} from '../core/move'
+import {plural, sourceLabel} from '../core/labels'
+import {cutTaskBlocks, headingLine, insertUnderHeadingAt, newTaskBlock} from '../core/move'
 
 import type {App} from 'obsidian'
 import type {JournalEntry, LineRecord} from '../core/journal'
@@ -140,7 +140,7 @@ export const moveTasksToProject = async (
     )
   }
   const total = outcome.moved + outcome.duplicated
-  const projectName = (projectPath.split('/').pop() ?? projectPath).replace(/\.md$/, '')
+  const projectName = sourceLabel(projectPath)
   return {
     moved: total,
     entry: toJournalEntry(`moved ${plural(total)} to ${projectName}`, outcome.records),
@@ -180,7 +180,7 @@ export const addTaskToProject = async (
     return insertion.lines.join('\n')
   })
 
-  const projectName = (projectPath.split('/').pop() ?? projectPath).replace(/\.md$/, '')
+  const projectName = sourceLabel(projectPath)
   return toJournalEntry(`added a task to ${projectName}`, records)
 }
 
@@ -305,7 +305,5 @@ export const createProjectFromTemplate = async (
     return app.vault.create(path, content)
   }
 
-  const explicitMarks = targetHeading.trim().match(/^#{1,6}(?=\s)/)?.[0]
-  const headingLine = `${explicitMarks ?? '##'} ${targetHeading.replace(/^#+\s*/, '').trim()}`
-  return app.vault.create(path, FALLBACK_TEMPLATE(name, headingLine))
+  return app.vault.create(path, FALLBACK_TEMPLATE(name, headingLine(targetHeading)))
 }

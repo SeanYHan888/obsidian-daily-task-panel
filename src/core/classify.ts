@@ -1,5 +1,6 @@
 import {buildTaskTree} from './hierarchy'
 import {isCalendarBlock} from './machine-note'
+import {normalizeHeading} from './move'
 import {compareProjects, compareUnstarted} from './order'
 import {addDays} from './schedule'
 
@@ -7,9 +8,6 @@ import type {ClassifyConfig, ProjectGroup, ProjectMeta, Sections, Task} from './
 
 export const inFolder = (filePath: string, folder: string): boolean =>
   filePath.startsWith(folder.replace(/\/$/, '') + '/')
-
-const normalizeHeading = (heading: string) =>
-  heading.replace(/^#+\s*/, '').trim().toLowerCase()
 
 /**
  * An inbox capture: undated, in a daily note, under the inbox heading —
