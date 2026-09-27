@@ -29,6 +29,8 @@ const options = {
   format: 'cjs',
   target: 'es2022',
   logLevel: 'info',
+  // Production ships minified: the Svelte 5 runtime alone is 164 kB unminified, 56 kB minified.
+  minify: prod,
   sourcemap: prod ? false : 'inline',
   treeShaking: true,
   plugins: [
