@@ -39,6 +39,14 @@ export type ProjectMeta = {
   start: string | null
 }
 
+/** The frontmatter keys the panel writes (ADR-0004's list); null clears a key. */
+export type ProjectPatch = {
+  status?: ProjectStatus
+  deadline?: string | null
+  start?: string | null
+  order?: number | null
+}
+
 export type ProjectGroup = {
   project: ProjectMeta
   tasks: Task[]

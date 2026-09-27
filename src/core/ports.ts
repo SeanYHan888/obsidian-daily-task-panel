@@ -1,6 +1,6 @@
 import type {JournalEntry} from './journal'
 import type {VaultLayout} from './layout'
-import type {ProjectMeta, ProjectStatus, Task} from './types'
+import type {ProjectMeta, ProjectPatch, Task} from './types'
 
 /**
  * What the core needs from the outside world, as three narrow contracts
@@ -32,12 +32,12 @@ export type ProjectStore = {
    * the folder's shape.
    */
   onChange(listener: () => void): () => void
-  setStatus(path: string, status: ProjectStatus): Promise<boolean>
-  setDeadline(path: string, deadline: string | null): Promise<boolean>
-  /** Project start (#23); null clears it. */
-  setStart(path: string, start: string | null): Promise<boolean>
-  /** Manual rank (#20); null clears it. */
-  setOrder(path: string, order: number | null): Promise<boolean>
+  /**
+   * One frontmatter write: every key in the patch lands in the same edit
+   * (null clears). What to write, and with what consequence, is decided in
+   * core/project-commands.ts.
+   */
+  write(path: string, patch: ProjectPatch): Promise<boolean>
   /** Terminal statuses move the note to the archive; task lines are never touched. */
   archive(path: string, status: 'done' | 'dropped'): Promise<boolean>
   /** Returns the created (or existing same-name) note's path, or null. */

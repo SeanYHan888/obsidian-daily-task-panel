@@ -20,10 +20,7 @@ import {
   onProjectsChange,
   readProjects,
   renameProject,
-  setProjectDeadline,
-  setProjectOrder,
-  setProjectStart,
-  setProjectStatus,
+  writeProject,
 } from './projects'
 import {getTasksPlugin, onTasksChange, readTasks, toggleTask} from './tasks-plugin'
 
@@ -66,10 +63,7 @@ export const createPorts = (app: App, settings: () => PanelSettings): Ports => {
     projects: {
       read: () => readProjects(app, layout().projectsFolder),
       onChange: listener => onProjectsChange(app, () => layout().projectsFolder, listener),
-      setStatus: (path, status) => setProjectStatus(app, path, status),
-      setDeadline: (path, deadline) => setProjectDeadline(app, path, deadline),
-      setStart: (path, start) => setProjectStart(app, path, start),
-      setOrder: (path, order) => setProjectOrder(app, path, order),
+      write: (path, patch) => writeProject(app, path, patch),
       archive: (path, status) => archiveProject(app, path, status, layout().archiveFolder),
       create: async (name, today) => {
         const current = layout()

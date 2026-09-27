@@ -9,7 +9,6 @@ import {setupState} from './core/setup'
 import {dropIntent} from './core/drop'
 import {flattenTaskTree} from './core/hierarchy'
 import {EMPTY_LAYOUT} from './core/layout'
-import {projectDateNotice} from './core/labels'
 import {editableTasks} from './core/machine-note'
 import {
   dueMenuSpec,
@@ -19,9 +18,16 @@ import {
   selectBarMenuSpec,
   taskMenuSpec,
 } from './core/menus'
-import {canMove, movableProjects, moveWrites, organizeByStatus, placeWrites, topRank} from './core/order'
+import {canMove} from './core/order'
+import {
+  commitStatus,
+  moveProject as moveProjectCommand,
+  organizeProjects as organizeProjectsCommand,
+  placeProject as placeProjectCommand,
+  setProjectDate,
+} from './core/project-commands'
 import {postponeAnchor, resolveQuickDate, resolveRelativeDate, taskWords} from './core/schedule'
-import {carryFoldToggle, foldToggles, promotionOutcome, retirePlan} from './core/sections'
+import {carryFoldToggle, foldToggles, retirePlan} from './core/sections'
 
 import type {WorkspaceLeaf} from 'obsidian'
 import type {DropTarget} from './core/drop'
@@ -451,68 +457,40 @@ export class PanelView extends ItemView {
   }
 
   /**
-   * The pressing loop's one tap: commit a pressing project to `now`. Over
-   * the limit it still goes through — warn never block — and the notice
-   * names the capacity consequence instead of a modal standing in the way.
+   * Every project frontmatter write is a project command (core): the view
+   * runs it and shows its notice. The pressing loop's → now and the menu's
+   * status items are one path, so both name the capacity consequence — warn
+   * never block — when a commit to `now` passes the limit.
    */
-  private async promote(project: ProjectMeta): Promise<void> {
-    const {count, over} = promotionOutcome(this.lastSections, this.plugin.settings.wipLimit)
-    if (await this.ports.projects.setStatus(project.path, 'now')) {
-      await this.liftToTop(project)
-      new Notice(
-        over
-          ? `Daily Task Panel: ${project.name} → now — now is full (${count}/${this.plugin.settings.wipLimit})`
-          : `Daily Task Panel: ${project.name} → now`,
-      )
-    }
-  }
-
   private async changeStatus(project: ProjectMeta, status: ProjectStatus): Promise<void> {
-    if (await this.ports.projects.setStatus(project.path, status)) {
-      if (status === 'now') await this.liftToTop(project)
-      new Notice(`Daily Task Panel: ${project.name} → ${status}`)
-    }
+    this.notify(
+      await commitStatus(this.ports.projects, project, status, {
+        sections: this.lastSections,
+        wipLimit: this.plugin.settings.wipLimit,
+      }),
+    )
   }
 
-  /**
-   * A transition to `now` puts the project above everything (#20): the thing
-   * just committed to is what should be seen first. Other status changes and
-   * deadline edits leave the rank alone.
-   */
-  private async liftToTop(project: ProjectMeta): Promise<void> {
-    await this.ports.projects.setOrder(project.path, topRank(this.ports.projects.read()))
+  private promote(project: ProjectMeta): Promise<void> {
+    return this.changeStatus(project, 'now')
   }
 
-  /** The band a move works within (#20, #22): core's one definition, over the last projection. */
-  private movableBand(): ProjectMeta[] {
-    return movableProjects(this.lastSections?.projects ?? [])
-  }
-
-  /** Move to top/up/down/bottom (#20): core names the writes, this runs them. */
+  /** Move to top/up/down/bottom (#20), within the band as last shown. */
   private async moveProject(project: ProjectMeta, direction: MoveDirection): Promise<void> {
-    const writes = moveWrites(this.movableBand(), project.path, direction)
-    for (const write of writes) await this.ports.projects.setOrder(write.path, write.order)
+    await moveProjectCommand(this.ports.projects, this.lastSections?.projects ?? [], project.path, direction)
   }
 
   /** Drag-to-reorder (#21): the same writer as the menu moves, one drop at a time. */
   private async placeProject(path: string, targetPath: string): Promise<void> {
-    const writes = placeWrites(this.movableBand(), path, targetPath)
-    for (const write of writes) await this.ports.projects.setOrder(write.path, write.order)
+    await placeProjectCommand(this.ports.projects, this.lastSections?.projects ?? [], path, targetPath)
   }
 
-  /**
-   * Organize by status (#20): renumber every active project now → next →
-   * later, keeping the current order inside each tier. Reversible by the same
-   * menu, so no confirmation — the notice names what happened.
-   */
   private async organizeProjects(): Promise<void> {
-    const writes = organizeByStatus(this.ports.projects.read(), this.plugin.settings.pacingMode)
-    for (const write of writes) await this.ports.projects.setOrder(write.path, write.order)
-    new Notice(
-      writes.length === 0
-        ? 'Daily Task Panel: projects already organized by status'
-        : `Daily Task Panel: organized ${writes.length} project${writes.length === 1 ? '' : 's'} by status`,
-    )
+    this.notify(await organizeProjectsCommand(this.ports.projects, this.plugin.settings.pacingMode))
+  }
+
+  private notify(outcome: {notice: string | null}): void {
+    if (outcome.notice) new Notice(outcome.notice)
   }
 
   /**
@@ -532,17 +510,8 @@ export class PanelView extends ItemView {
     if (date) await this.changeProjectDate(project, {field, date})
   }
 
-  /**
-   * Like status flips, project date edits are frontmatter — not journaled.
-   * A start past the deadline (or a deadline before the start) is written
-   * as asked — warn, never block — and the notice names both dates (#23).
-   */
   private async changeProjectDate(project: ProjectMeta, edit: ProjectDateEdit): Promise<void> {
-    const written =
-      edit.field === 'start'
-        ? await this.ports.projects.setStart(project.path, edit.date)
-        : await this.ports.projects.setDeadline(project.path, edit.date)
-    if (written) new Notice(projectDateNotice(project, edit))
+    this.notify(await setProjectDate(this.ports.projects, project, edit))
   }
 
   /**

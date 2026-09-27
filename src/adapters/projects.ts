@@ -3,7 +3,7 @@ import {Notice, TAbstractFile, TFile, TFolder, Vault, normalizePath} from 'obsid
 import {inFolder} from '../core/classify'
 
 import type {App} from 'obsidian'
-import type {ProjectMeta, ProjectStatus} from '../core/types'
+import type {ProjectMeta, ProjectPatch, ProjectStatus} from '../core/types'
 
 const ACTIVE_STATUSES: ReadonlySet<string> = new Set(['now', 'next', 'later'])
 
@@ -110,43 +110,15 @@ const editFrontmatter = async (
   return true
 }
 
-/** Sets one frontmatter key, or removes it on null. */
-const setKey = (app: App, projectPath: string, key: string, value: unknown): Promise<boolean> =>
+/** Applies a patch to the note's frontmatter in one edit; a null value removes its key. */
+export const writeProject = (app: App, projectPath: string, patch: ProjectPatch): Promise<boolean> =>
   editFrontmatter(app, projectPath, frontmatter => {
-    if (value == null) delete frontmatter[key]
-    else frontmatter[key] = value
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === undefined) continue
+      if (value === null) delete frontmatter[key]
+      else frontmatter[key] = value
+    }
   })
-
-/** Stamps an active status (now/next/later) into the project's frontmatter. */
-export const setProjectStatus = (
-  app: App,
-  projectPath: string,
-  status: ProjectStatus,
-): Promise<boolean> => setKey(app, projectPath, 'status', status)
-
-/** Stamps (or clears, on null) the project's deadline. */
-export const setProjectDeadline = (
-  app: App,
-  projectPath: string,
-  deadline: string | null,
-): Promise<boolean> => setKey(app, projectPath, 'deadline', deadline)
-
-/**
- * Stamps (or clears, on null) the project's start (#23). A start past the
- * deadline is written as asked; naming the contradiction is the notice's job.
- */
-export const setProjectStart = (
-  app: App,
-  projectPath: string,
-  start: string | null,
-): Promise<boolean> => setKey(app, projectPath, 'start', start)
-
-/** Stamps (or clears, on null) the project's manual rank (#20). */
-export const setProjectOrder = (
-  app: App,
-  projectPath: string,
-  order: number | null,
-): Promise<boolean> => setKey(app, projectPath, 'order', order)
 
 /**
  * Retires a project: stamps the terminal status into frontmatter and moves
