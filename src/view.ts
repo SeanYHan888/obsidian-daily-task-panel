@@ -163,6 +163,13 @@ export class PanelView extends ItemView {
     // store. Typing in any other note costs no projection.
     this.register(this.ports.tasks.onChange(this.scheduleRefresh))
     this.register(this.ports.projects.onChange(this.scheduleRefresh))
+    // Reveal has no event of its own: a sidebar expanding is a workspace
+    // resize (measured — neither layout-change nor the view's own onResize
+    // fires), a tab switch an active-leaf change. The check is deferred a
+    // tick so the element has settled into shown.
+    this.registerEvent(this.app.workspace.on('resize', this.catchUp))
+    this.registerEvent(this.app.workspace.on('layout-change', this.catchUp))
+    this.registerEvent(this.app.workspace.on('active-leaf-change', this.catchUp))
     this.registerInterval(
       window.setInterval(() => {
         if (localToday() !== this.lastToday) this.refresh()
@@ -181,8 +188,15 @@ export class PanelView extends ItemView {
   }
 
   /** A hidden panel that missed a projection catches up when it is shown again. */
+  private readonly catchUp = (): void => {
+    if (!this.staleWhileHidden) return
+    window.setTimeout(() => {
+      if (this.staleWhileHidden && this.containerEl.isShown()) this.refresh()
+    }, 0)
+  }
+
   onResize(): void {
-    if (this.staleWhileHidden && this.containerEl.isShown()) this.refresh()
+    this.catchUp()
   }
 
   refresh(): void {
