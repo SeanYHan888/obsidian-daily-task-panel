@@ -1,6 +1,6 @@
-# Taskflow is the reminder; Day Planner is the calendar
+# Daily Task Panel is the reminder; Day Planner is the calendar
 
-Taskflow projects tasks, never time blocks, even when time blocks are written as checkbox lines. Concretely: the panel never reads or writes daily-note `# Events:` sections (Day Planner's territory), and it excludes the Apple Sync note's *Calendar* section from every section including Today — while the same note's *Reminders* section stays fully in scope (📅 reminders appear in Today and nag in Overdue). A missed calendar block is not a debt and never surfaces; an overdue reminder is and does.
+Daily Task Panel projects tasks, never time blocks, even when time blocks are written as checkbox lines. Concretely: the panel never reads or writes daily-note `# Events:` sections (Day Planner's territory), and it excludes the Apple Sync note's *Calendar* section from every section including Today — while the same note's *Reminders* section stays fully in scope (📅 reminders appear in Today and nag in Overdue). A missed calendar block is not a debt and never surfaces; an overdue reminder is and does.
 
 Trade-off: Today is no longer "everything committed today" (meetings live in Day Planner/Calendar), in exchange for a clean two-plugin boundary and a Today list that is purely "tasks I chose". Also implied: no reschedule affordances on any Apple Sync line — the note is machine-rewritten every 15 minutes, so only check-off (which the sync propagates to Apple Reminders) is safe.
 

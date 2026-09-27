@@ -8,4 +8,4 @@ Backlogs sort by a fixed rule (deadline soonest first, then now → next → lat
 
 **Rejected: order within status tiers.** The requirement was that a `later` project can be moved above `now` ones; tiers would forbid it. Organize by status is offered as an act instead of a constraint.
 
-Consequence: `order` joins `status` and `deadline` as the project frontmatter Taskflow owns writes to (ADR-0004's interop list). Drag-to-reorder headers (#21) writes the same key through the same core arithmetic (`core/order.ts` `placeWrites`), so there is no second write path; a dragged header carries a different payload from a dragged row, and arrived-deadline projects neither lift nor land.
+Consequence: `order` joins `status` and `deadline` as the project frontmatter Daily Task Panel owns writes to (ADR-0004's interop list). Drag-to-reorder headers (#21) writes the same key through the same core arithmetic (`core/order.ts` `placeWrites`), so there is no second write path; a dragged header carries a different payload from a dragged row, and arrived-deadline projects neither lift nor land.
