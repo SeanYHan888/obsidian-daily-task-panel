@@ -52,7 +52,10 @@ type PanelHandle = {
  */
 export type PanelServices = {
   readonly settings: PanelSettings
+  /** A setting the projection depends on: saved, then every view reprojects. */
   updateSettings(updates: Partial<PanelSettings>): Promise<void>
+  /** Collapse and fold state: saved, then every view repaints — no vault read. */
+  updateUiState(updates: Partial<PanelSettings>): Promise<void>
   pushJournal(entry: JournalEntry): void
   undo(entry?: JournalEntry): Promise<void>
 }
@@ -68,6 +71,17 @@ export class PanelView extends ItemView {
   private panel: PanelHandle | null = null
   private lastToday = localToday()
   private lastSections: Sections | null = null
+  /** A projection was asked for while the panel was hidden; it runs on reveal. */
+  private staleWhileHidden = false
+  /**
+   * The projection scheduler: every trigger — the task source's signal, a
+   * metadata change, a write of our own — funnels into one trailing
+   * debounce. Nothing reprojects right after its own write: the caches the
+   * projection reads (the Tasks plugin's, the metadata cache) update after
+   * the file does, so an immediate read is stale by construction and the
+   * signal that follows is the refresh that counts.
+   */
+  private readonly scheduleRefresh = debounce(() => this.refresh(), 350, true)
   /** The layout the last projection was built on — drops resolve against it, not a fresh read. */
   private lastLayout: VaultLayout = EMPTY_LAYOUT
   private portsCache: Ports | null = null
@@ -144,11 +158,10 @@ export class PanelView extends ItemView {
       },
     }) as unknown as PanelHandle
 
-    const refreshSoon = debounce(() => this.refresh(), 350, true)
     // The task source owns its own change signal; frontmatter and file edits
     // arrive through Obsidian's generic metadata event.
-    this.register(this.ports.tasks.onChange(refreshSoon))
-    this.registerEvent(this.app.metadataCache.on('changed', refreshSoon))
+    this.register(this.ports.tasks.onChange(this.scheduleRefresh))
+    this.registerEvent(this.app.metadataCache.on('changed', this.scheduleRefresh))
     this.registerInterval(
       window.setInterval(() => {
         if (localToday() !== this.lastToday) this.refresh()
@@ -166,8 +179,20 @@ export class PanelView extends ItemView {
     this.panel = null
   }
 
+  /** A hidden panel that missed a projection catches up when it is shown again. */
+  onResize(): void {
+    if (this.staleWhileHidden && this.containerEl.isShown()) this.refresh()
+  }
+
   refresh(): void {
     if (!this.panel) return
+    // A panel in a collapsed sidebar or a background tab projects nothing:
+    // it notes the miss and catches up on reveal (onResize).
+    if (!this.containerEl.isShown()) {
+      this.staleWhileHidden = true
+      return
+    }
+    this.staleWhileHidden = false
     const settings = this.plugin.settings
     const today = localToday()
     this.lastToday = today
@@ -188,7 +213,7 @@ export class PanelView extends ItemView {
 
     if (setup.includes('tasks-plugin-missing')) {
       this.lastSections = null
-      this.panel.update({sections: null, ...base})
+      this.show({sections: null, ...base})
       return
     }
 
@@ -200,7 +225,28 @@ export class PanelView extends ItemView {
     })
 
     this.lastSections = sections
-    this.panel.update({sections, ...base})
+    this.show({sections, ...base})
+  }
+
+  private lastData: PanelData | null = null
+
+  private show(data: PanelData): void {
+    this.lastData = data
+    this.panel?.update(data)
+  }
+
+  /**
+   * UI state changed (a fold, a collapse): the last projection is shown
+   * again with the new toggles — no vault read, no classification.
+   */
+  repaint(): void {
+    if (!this.lastData) return
+    const settings = this.plugin.settings
+    this.show({
+      ...this.lastData,
+      collapsed: settings.collapsed,
+      collapsedProjects: settings.collapsedProjects,
+    })
   }
 
   /** Turns a core menu spec into an Obsidian Menu at the event's position. */
@@ -288,19 +334,17 @@ export class PanelView extends ItemView {
     if (!name) return
     const path = await this.ports.projects.create(name, localToday())
     if (path) new Notice(`Daily Task Panel: project ${name} created`)
-    this.refresh()
   }
 
   /** Fold all / Unfold all: core names the toggles, this stores them. */
   private async foldAllProjects(folded: boolean): Promise<void> {
-    await this.plugin.updateSettings({
+    await this.plugin.updateUiState({
       collapsedProjects: foldToggles(
         this.lastSections?.projects ?? [],
         folded,
         this.plugin.settings.collapsedProjects,
       ),
     })
-    this.refresh()
   }
 
   /** Rename project: the note moves under its new name; links follow. */
@@ -314,12 +358,11 @@ export class PanelView extends ItemView {
     if (!name || name === project.name) return
     const path = await this.ports.projects.rename(project.path, name)
     if (path) {
-      await this.plugin.updateSettings({
+      await this.plugin.updateUiState({
         collapsedProjects: carryFoldToggle(this.plugin.settings.collapsedProjects, project.path, path),
       })
       new Notice(`Daily Task Panel: ${project.name} → ${name}`)
     }
-    this.refresh()
   }
 
   /**
@@ -407,7 +450,6 @@ export class PanelView extends ItemView {
           : `Daily Task Panel: ${project.name} → now`,
       )
     }
-    this.refresh()
   }
 
   private async changeStatus(project: ProjectMeta, status: ProjectStatus): Promise<void> {
@@ -415,7 +457,6 @@ export class PanelView extends ItemView {
       if (status === 'now') await this.liftToTop(project)
       new Notice(`Daily Task Panel: ${project.name} → ${status}`)
     }
-    this.refresh()
   }
 
   /**
@@ -436,14 +477,12 @@ export class PanelView extends ItemView {
   private async moveProject(project: ProjectMeta, direction: MoveDirection): Promise<void> {
     const writes = moveWrites(this.movableBand(), project.path, direction)
     for (const write of writes) await this.ports.projects.setOrder(write.path, write.order)
-    if (writes.length > 0) this.refresh()
   }
 
   /** Drag-to-reorder (#21): the same writer as the menu moves, one drop at a time. */
   private async placeProject(path: string, targetPath: string): Promise<void> {
     const writes = placeWrites(this.movableBand(), path, targetPath)
     for (const write of writes) await this.ports.projects.setOrder(write.path, write.order)
-    if (writes.length > 0) this.refresh()
   }
 
   /**
@@ -459,7 +498,6 @@ export class PanelView extends ItemView {
         ? 'Daily Task Panel: projects already organized by status'
         : `Daily Task Panel: organized ${writes.length} project${writes.length === 1 ? '' : 's'} by status`,
     )
-    this.refresh()
   }
 
   /**
@@ -490,7 +528,6 @@ export class PanelView extends ItemView {
         ? await this.ports.projects.setStart(project.path, edit.date)
         : await this.ports.projects.setDeadline(project.path, edit.date)
     if (written) new Notice(projectDateNotice(project, edit))
-    this.refresh()
   }
 
   /**
@@ -518,7 +555,6 @@ export class PanelView extends ItemView {
         `Daily Task Panel: ${project.name} marked ${status} — archived to ${this.lastLayout.archiveFolder}`,
       )
     }
-    this.refresh()
   }
 
   /** Journals the action and shows its notice with an undo link attached. */
@@ -548,10 +584,12 @@ export class PanelView extends ItemView {
     if (date) await this.act(() => this.ports.editor.setDue([task], date))
   }
 
-  /** The uniform write pipeline: run the edit, journal + notice it, reproject. */
+  /**
+   * The uniform write pipeline: run the edit, journal + notice it. The
+   * reprojection is the task source's signal's job (see scheduleRefresh).
+   */
   private async act(run: () => Promise<JournalEntry | null>): Promise<void> {
     this.record(await run())
-    this.refresh()
   }
 
   private reschedule(tasks: Task[], date: string): Promise<void> {
@@ -609,7 +647,6 @@ export class PanelView extends ItemView {
 
   private async toggle(task: Task): Promise<void> {
     await this.ports.tasks.toggle(task)
-    this.refresh()
   }
 
   /**
@@ -625,7 +662,7 @@ export class PanelView extends ItemView {
   }
 
   private async setCollapsed(key: SectionKey, collapsed: boolean): Promise<void> {
-    await this.plugin.updateSettings({
+    await this.plugin.updateUiState({
       collapsed: {...this.plugin.settings.collapsed, [key]: collapsed},
     })
   }
@@ -636,7 +673,7 @@ export class PanelView extends ItemView {
    * projectFolded), so an unfold has to be remembered, not just a fold.
    */
   private async setProjectCollapsed(path: string, collapsed: boolean): Promise<void> {
-    await this.plugin.updateSettings({
+    await this.plugin.updateUiState({
       collapsedProjects: {...this.plugin.settings.collapsedProjects, [path]: collapsed},
     })
   }

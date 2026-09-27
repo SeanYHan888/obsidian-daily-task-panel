@@ -90,20 +90,28 @@ export default class DailyTaskPanelPlugin extends Plugin {
         ? `Daily Task Panel: undid "${target.label}" — ${stale} line${stale === 1 ? '' : 's'} changed since last refresh — skipped`
         : `Daily Task Panel: undid "${target.label}"`,
     )
-    this.refreshViews()
+    // The lines just changed; the task source's signal reprojects every view.
   }
 
-  refreshViews(): void {
-    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
-      const view = leaf.view
-      if (view instanceof PanelView) view.refresh()
-    }
+  private views(): PanelView[] {
+    return this.app.workspace
+      .getLeavesOfType(VIEW_TYPE)
+      .map(leaf => leaf.view)
+      .filter((view): view is PanelView => view instanceof PanelView)
   }
 
+  /** A setting the projection depends on changed: every view reprojects. */
   async updateSettings(updates: Partial<PanelSettings>): Promise<void> {
     this.settings = {...this.settings, ...updates}
     await this.saveData(this.settings)
-    this.refreshViews()
+    for (const view of this.views()) view.refresh()
+  }
+
+  /** Collapse and fold state changed: every view repaints its last projection. */
+  async updateUiState(updates: Partial<PanelSettings>): Promise<void> {
+    this.settings = {...this.settings, ...updates}
+    await this.saveData(this.settings)
+    for (const view of this.views()) view.repaint()
   }
 
   private async activateView(reveal = true): Promise<void> {
