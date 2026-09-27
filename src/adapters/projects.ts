@@ -1,4 +1,4 @@
-import {Notice, TAbstractFile, TFile, normalizePath} from 'obsidian'
+import {Notice, TAbstractFile, TFile, TFolder, Vault, normalizePath} from 'obsidian'
 
 import {inFolder} from '../core/classify'
 
@@ -16,13 +16,26 @@ const readIsoDate = (raw: unknown): string | null =>
   typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null
 
 /**
+ * The markdown notes under one folder, subfolders included — a walk of that
+ * folder, not a filter over every file in the vault, so the cost follows the
+ * projects folder's size rather than the vault's.
+ */
+const markdownFilesUnder = (app: App, folder: string): TFile[] => {
+  const root = app.vault.getFolderByPath(normalizePath(folder))
+  if (!(root instanceof TFolder)) return []
+  const files: TFile[] = []
+  Vault.recurseChildren(root, file => {
+    if (file instanceof TFile && file.extension === 'md') files.push(file)
+  })
+  return files
+}
+
+/**
  * Projects are notes in the projects folder; membership is location, status is
  * frontmatter. Retired statuses (done/dropped) fall out of the panel entirely.
  */
 export const readProjects = (app: App, projectsFolder: string): ProjectMeta[] => {
-  return app.vault
-    .getMarkdownFiles()
-    .filter(file => inFolder(file.path, projectsFolder))
+  return markdownFilesUnder(app, projectsFolder)
     .map(file => {
       const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter
       const rawStatus: unknown = frontmatter?.status
