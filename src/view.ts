@@ -158,10 +158,11 @@ export class PanelView extends ItemView {
       },
     }) as unknown as PanelHandle
 
-    // The task source owns its own change signal; frontmatter and file edits
-    // arrive through Obsidian's generic metadata event.
+    // Each source owns its own change signal: task lines from the task
+    // source, project frontmatter and the folder's shape from the project
+    // store. Typing in any other note costs no projection.
     this.register(this.ports.tasks.onChange(this.scheduleRefresh))
-    this.registerEvent(this.app.metadataCache.on('changed', this.scheduleRefresh))
+    this.register(this.ports.projects.onChange(this.scheduleRefresh))
     this.registerInterval(
       window.setInterval(() => {
         if (localToday() !== this.lastToday) this.refresh()

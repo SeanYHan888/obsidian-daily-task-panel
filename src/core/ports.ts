@@ -25,6 +25,13 @@ export type TaskSource = {
 /** Project notes: frontmatter reads and writes, lifecycle, creation. */
 export type ProjectStore = {
   read(): ProjectMeta[]
+  /**
+   * Fires when the projects' projection may have changed — a note in the
+   * projects folder edited, created, renamed or deleted; returns unsubscribe.
+   * Task lines are the task source's signal; this one is for frontmatter and
+   * the folder's shape.
+   */
+  onChange(listener: () => void): () => void
   setStatus(path: string, status: ProjectStatus): Promise<boolean>
   setDeadline(path: string, deadline: string | null): Promise<boolean>
   /** Project start (#23); null clears it. */

@@ -17,6 +17,7 @@ import {
 } from './move-tasks'
 import {
   archiveProject,
+  onProjectsChange,
   readProjects,
   renameProject,
   setProjectDeadline,
@@ -64,6 +65,7 @@ export const createPorts = (app: App, settings: () => PanelSettings): Ports => {
     },
     projects: {
       read: () => readProjects(app, layout().projectsFolder),
+      onChange: listener => onProjectsChange(app, () => layout().projectsFolder, listener),
       setStatus: (path, status) => setProjectStatus(app, path, status),
       setDeadline: (path, deadline) => setProjectDeadline(app, path, deadline),
       setStart: (path, start) => setProjectStart(app, path, start),

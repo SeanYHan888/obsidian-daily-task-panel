@@ -1,4 +1,4 @@
-import {Notice, TFile, normalizePath} from 'obsidian'
+import {Notice, TAbstractFile, TFile, normalizePath} from 'obsidian'
 
 import {inFolder} from '../core/classify'
 
@@ -49,6 +49,33 @@ export const readProjects = (app: App, projectsFolder: string): ProjectMeta[] =>
       order,
       start,
     }))
+}
+
+/**
+ * The project store's change signal. Frontmatter edits arrive as metadata
+ * changes, filtered to the projects folder so typing elsewhere in the vault
+ * costs no projection; a note created, renamed, or deleted anywhere fires
+ * unfiltered — rare events, and a rename can carry a note into or out of
+ * the folder from either side.
+ */
+export const onProjectsChange = (
+  app: App,
+  projectsFolder: () => string,
+  listener: () => void,
+): (() => void) => {
+  const inProjects = (file: TAbstractFile) => inFolder(file.path, projectsFolder())
+  const metadataRef = app.metadataCache.on('changed', file => {
+    if (inProjects(file)) listener()
+  })
+  const vaultRefs = [
+    app.vault.on('create', listener),
+    app.vault.on('delete', listener),
+    app.vault.on('rename', listener),
+  ]
+  return () => {
+    app.metadataCache.offref(metadataRef)
+    for (const ref of vaultRefs) app.vault.offref(ref)
+  }
 }
 
 /**
