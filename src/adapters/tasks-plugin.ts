@@ -1,7 +1,9 @@
 import {Notice, TFile} from 'obsidian'
 
+import {editLine, sameLine} from './lines'
+
 import type {App, EventRef} from 'obsidian'
-import type {TaskflowTask} from '../core/types'
+import type {Task} from '../core/types'
 
 /** The slice of the Tasks plugin we rely on. Its absence is a first-class state. */
 type TasksPluginLike = {
@@ -47,7 +49,7 @@ const isoDate = (value: unknown): string | null => {
  * Parent lines come from the metadata cache's list-item relations, the same
  * source the subtask hierarchy has always used.
  */
-export const readTasks = (app: App): TaskflowTask[] => {
+export const readTasks = (app: App): Task[] => {
   const plugin = getTasksPlugin(app)
   if (!plugin) return []
 
@@ -68,7 +70,7 @@ export const readTasks = (app: App): TaskflowTask[] => {
     return parent != null && parent >= 0 ? parent : undefined
   }
 
-  const tasks: TaskflowTask[] = []
+  const tasks: Task[] = []
   for (const raw of plugin.getTasks()) {
     const t = raw as {
       description?: string
@@ -105,24 +107,25 @@ export const readTasks = (app: App): TaskflowTask[] => {
  * degraded write path without the API. The source line is verified before
  * editing; a stale line aborts with a Notice instead of writing.
  */
-export const toggleTask = async (app: App, task: TaskflowTask): Promise<void> => {
+export const toggleTask = async (app: App, task: Task): Promise<void> => {
   const file = app.vault.getAbstractFileByPath(task.filePath)
   if (!(file instanceof TFile)) return
 
   const api = getTasksPlugin(app)?.apiV1
   if (!api || typeof api.executeToggleTaskDoneCommand !== 'function') {
-    new Notice('Taskflow: Tasks plugin API unavailable — task not completed')
+    new Notice('Daily Task Panel: Tasks plugin API unavailable — task not completed')
     return
   }
   let stale = false
   await app.vault.process(file, data => {
     const lines = data.split('\n')
-    if (lines[task.line] !== task.sourceLine) {
+    const line = lines[task.line]
+    if (!sameLine(line, task.sourceLine)) {
       stale = true
       return data
     }
-    lines[task.line] = api.executeToggleTaskDoneCommand(task.sourceLine, task.filePath)
+    lines[task.line] = editLine(line, bare => api.executeToggleTaskDoneCommand(bare, task.filePath))
     return lines.join('\n')
   })
-  if (stale) new Notice('Taskflow: task moved since last refresh — refreshing instead')
+  if (stale) new Notice('Daily Task Panel: task moved since last refresh — refreshing instead')
 }

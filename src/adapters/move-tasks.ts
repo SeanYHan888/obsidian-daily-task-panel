@@ -1,5 +1,6 @@
 import {Notice, TFile, moment} from 'obsidian'
 
+import {carriageReturn, sameLine, withEnding} from './lines'
 import {relationsFromLines} from '../core/hierarchy'
 import {toJournalEntry} from '../core/journal'
 import {plural} from '../core/labels'
@@ -7,9 +8,8 @@ import {cutTaskBlocks, insertUnderHeadingAt, newTaskBlock} from '../core/move'
 
 import type {App} from 'obsidian'
 import type {JournalEntry, LineRecord} from '../core/journal'
-import type {TaskflowTask} from '../core/types'
-
-export type MoveResult = {moved: number; entry: JournalEntry | null}
+import type {MoveOutcome} from '../core/ports'
+import type {Task} from '../core/types'
 
 type RelocateOutcome = {
   moved: number
@@ -34,12 +34,12 @@ type RelocateOutcome = {
  */
 const relocateTaskBlocks = async (
   app: App,
-  tasks: TaskflowTask[],
+  tasks: Task[],
   targetFile: TFile,
   heading: string,
   createMissing: boolean,
 ): Promise<RelocateOutcome> => {
-  const byFile = new Map<string, TaskflowTask[]>()
+  const byFile = new Map<string, Task[]>()
   let skipped = 0
   for (const task of tasks) {
     if (task.filePath === targetFile.path) {
@@ -61,7 +61,7 @@ const relocateTaskBlocks = async (
     }
 
     const snapshotLines = (await app.vault.read(file)).split('\n')
-    const valid = fileTasks.filter(t => snapshotLines[t.line] === t.sourceLine)
+    const valid = fileTasks.filter(t => sameLine(snapshotLines[t.line], t.sourceLine))
     skipped += fileTasks.length - valid.length
     if (valid.length === 0) continue
 
@@ -73,7 +73,9 @@ const relocateTaskBlocks = async (
 
     let appended = false
     await app.vault.process(targetFile, data => {
-      const insertion = insertUnderHeadingAt(data.split('\n'), heading, blocks, {createMissing})
+      const cr = carriageReturn(data)
+      const landing = blocks.map(block => withEnding(block, cr))
+      const insertion = insertUnderHeadingAt(data.split('\n'), heading, landing, {createMissing})
       if (!insertion) {
         headingMissing = true
         return data
@@ -115,13 +117,13 @@ const relocateTaskBlocks = async (
 /** Move to project (CONTEXT.md): triage's filing edit, and drag's project drop. */
 export const moveTasksToProject = async (
   app: App,
-  tasks: TaskflowTask[],
+  tasks: Task[],
   projectPath: string,
   targetHeading: string,
-): Promise<MoveResult> => {
+): Promise<MoveOutcome> => {
   const projectFile = app.vault.getAbstractFileByPath(projectPath)
   if (!(projectFile instanceof TFile)) {
-    new Notice(`Taskflow: project note not found: ${projectPath}`)
+    new Notice(`Daily Task Panel: project note not found: ${projectPath}`)
     return {moved: 0, entry: null}
   }
 
@@ -129,12 +131,12 @@ export const moveTasksToProject = async (
 
   if (outcome.duplicated > 0) {
     new Notice(
-      `Taskflow: ${plural(outcome.duplicated)} copied but not cut — the source note changed mid-move; remove the originals by hand`,
+      `Daily Task Panel: ${plural(outcome.duplicated)} copied but not cut — the source note changed mid-move; remove the originals by hand`,
     )
   }
   if (outcome.skipped > 0) {
     new Notice(
-      `Taskflow: ${plural(outcome.skipped)} not moved (changed since selection, or already in the target note)`,
+      `Daily Task Panel: ${plural(outcome.skipped)} not moved (changed since selection, or already in the target note)`,
     )
   }
   const total = outcome.moved + outcome.duplicated
@@ -161,13 +163,14 @@ export const addTaskToProject = async (
   if (!block) return null
   const projectFile = app.vault.getAbstractFileByPath(projectPath)
   if (!(projectFile instanceof TFile)) {
-    new Notice(`Taskflow: project note not found: ${projectPath}`)
+    new Notice(`Daily Task Panel: project note not found: ${projectPath}`)
     return null
   }
 
   const records: LineRecord[] = []
   await app.vault.process(projectFile, data => {
-    const insertion = insertUnderHeadingAt(data.split('\n'), targetHeading, block, {
+    const landing = block.map(lines => withEnding(lines, carriageReturn(data)))
+    const insertion = insertUnderHeadingAt(data.split('\n'), targetHeading, landing, {
       createMissing: true,
     })
     if (!insertion) return data
@@ -208,7 +211,7 @@ export const dailyNotesConfig = (app: App): {folder: string; format: string} | n
 }
 
 /** Today's daily note path, resolved the way the Daily Notes plugin does (the format may contain subfolders). */
-export const todayDailyNotePath = (app: App, today: string): string => {
+const todayDailyNotePath = (app: App, today: string): string => {
   const config = dailyNotesConfig(app) ?? {folder: '', format: 'YYYY-MM-DD'}
   const name = moment(today).format(config.format)
   return `${config.folder ? config.folder + '/' : ''}${name}.md`
@@ -222,14 +225,14 @@ export const todayDailyNotePath = (app: App, today: string): string => {
  */
 export const sendTasksBackToInbox = async (
   app: App,
-  tasks: TaskflowTask[],
+  tasks: Task[],
   inboxHeading: string,
   today: string,
-): Promise<MoveResult> => {
+): Promise<MoveOutcome> => {
   const dailyPath = todayDailyNotePath(app, today)
   const dailyFile = app.vault.getAbstractFileByPath(dailyPath)
   if (!(dailyFile instanceof TFile)) {
-    new Notice(`Taskflow: today's daily note not found (${dailyPath}) — create it first`)
+    new Notice(`Daily Task Panel: today's daily note not found (${dailyPath}) — create it first`)
     return {moved: 0, entry: null}
   }
 
@@ -237,17 +240,17 @@ export const sendTasksBackToInbox = async (
 
   if (outcome.headingMissing) {
     new Notice(
-      `Taskflow: no "${inboxHeading}" heading in today's daily note — nothing sent back`,
+      `Daily Task Panel: no "${inboxHeading}" heading in today's daily note — nothing sent back`,
     )
   }
   if (outcome.duplicated > 0) {
     new Notice(
-      `Taskflow: ${plural(outcome.duplicated)} copied but not cut — the project note changed mid-move; remove the originals by hand`,
+      `Daily Task Panel: ${plural(outcome.duplicated)} copied but not cut — the project note changed mid-move; remove the originals by hand`,
     )
   }
   if (outcome.skipped > 0) {
     new Notice(
-      `Taskflow: ${plural(outcome.skipped)} not sent back (changed since, or already in today's note)`,
+      `Daily Task Panel: ${plural(outcome.skipped)} not sent back (changed since, or already in today's note)`,
     )
   }
   const total = outcome.moved + outcome.duplicated
@@ -257,7 +260,7 @@ export const sendTasksBackToInbox = async (
   }
 }
 
-/** The built-in scaffold: only what Taskflow itself reads — a status and the move-target heading. No vault-specific frontmatter conventions (#6). */
+/** The built-in scaffold: only what the panel itself reads — a status and the move-target heading. No vault-specific frontmatter conventions (#6). */
 const FALLBACK_TEMPLATE = (name: string, headingLine: string) => `---
 status: later
 ---
@@ -287,7 +290,7 @@ export const createProjectFromTemplate = async (
 
   const existing = app.vault.getAbstractFileByPath(path)
   if (existing instanceof TFile) {
-    new Notice(`Taskflow: project "${name}" already exists — moving into it`)
+    new Notice(`Daily Task Panel: project "${name}" already exists — moving into it`)
     return existing
   }
   if (folder && !app.vault.getAbstractFileByPath(folder)) {

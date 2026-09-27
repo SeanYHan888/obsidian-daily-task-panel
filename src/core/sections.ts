@@ -1,6 +1,6 @@
 import {countTaskTree, flattenTaskTree, locationKey} from './hierarchy'
 
-import type {PacingMode, ProjectGroup, ProjectMeta, Sections, TaskflowTask} from './types'
+import type {PacingMode, ProjectGroup, ProjectMeta, Sections, Task} from './types'
 
 /**
  * Queries over a classified Sections projection — the questions the panel
@@ -9,7 +9,7 @@ import type {PacingMode, ProjectGroup, ProjectMeta, Sections, TaskflowTask} from
  */
 
 /** Every task a selection can span: To-do, its inbox tail, and the backlogs. */
-export const selectionSpan = (sections: Sections | null): TaskflowTask[] =>
+export const selectionSpan = (sections: Sections | null): Task[] =>
   sections
     ? [
         ...flattenTaskTree(sections.today),
@@ -26,8 +26,8 @@ export const selectionSpan = (sections: Sections | null): TaskflowTask[] =>
 export const selectionTasks = (
   sections: Sections | null,
   selectedKeys: ReadonlySet<string>,
-): TaskflowTask[] => {
-  const byKey = new Map<string, TaskflowTask>()
+): Task[] => {
+  const byKey = new Map<string, Task>()
   for (const t of selectionSpan(sections)) {
     const key = locationKey(t.filePath, t.line)
     if (selectedKeys.has(key) && !byKey.has(key)) byKey.set(key, t)

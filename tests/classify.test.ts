@@ -2,7 +2,7 @@ import {assert, test} from 'vitest'
 
 import {classifySections} from '../src/core/classify'
 
-import type {ClassifyConfig, ProjectMeta, TaskflowTask} from '../src/core/types'
+import type {ClassifyConfig, ProjectMeta, Task} from '../src/core/types'
 
 const CONFIG: ClassifyConfig = {
   today: '2026-08-21',
@@ -15,7 +15,7 @@ const CONFIG: ClassifyConfig = {
 }
 
 let nextLine = 0
-const task = (overrides: Partial<TaskflowTask> = {}): TaskflowTask => ({
+const task = (overrides: Partial<Task> = {}): Task => ({
   description: 'a task',
   filePath: 'Daily Notes/2026/08/08-21, Fri.md',
   line: nextLine++,
@@ -29,12 +29,12 @@ const task = (overrides: Partial<TaskflowTask> = {}): TaskflowTask => ({
 })
 
 const classify = (
-  tasks: TaskflowTask[],
+  tasks: Task[],
   projects: ProjectMeta[] = [],
   config: Partial<ClassifyConfig> = {},
 ) => classifySections(tasks, projects, {...CONFIG, ...config})
 
-const descriptions = (tasks: TaskflowTask[]) => tasks.map(t => t.description)
+const descriptions = (tasks: Task[]) => tasks.map(t => t.description)
 
 test('today holds open tasks scheduled or due today, from any note', () => {
   const scheduledToday = task({

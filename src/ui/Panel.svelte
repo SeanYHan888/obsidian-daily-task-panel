@@ -10,12 +10,14 @@
   import {projectFolded, pruneSelection, sectionCounts, selectionTasks, wipBadge} from '../core/sections'
 
   import type {DropTarget} from '../core/drop'
-  import type {TaskflowTask} from '../core/types'
+  import type {Task} from '../core/types'
   import type {PanelCallbacks, PanelData, RowContext} from './panel-types'
 
   let {callbacks}: {callbacks: PanelCallbacks} = $props()
 
-  let data: PanelData = $state({
+  // Replaced wholesale on every refresh and never mutated in place, so a
+  // deep reactive proxy over every task would be pure overhead.
+  let data: PanelData = $state.raw({
     sections: null,
     setup: [],
     today: '',
@@ -35,7 +37,7 @@
   let selectedKeys: ReadonlySet<string> = $state(new Set())
   /** Sidebar width, for the select bar's narrow-panel overflow. */
   let panelWidth = $state(0)
-  let dragTask: TaskflowTask | null = $state(null)
+  let dragTask: Task | null = $state(null)
   /** A project header being dragged (#21) — a different payload from a row. */
   let dragProject: string | null = $state(null)
   let dragOverProject: string | null = $state(null)
@@ -119,7 +121,7 @@
     today: data.today,
     machineNotePath: data.machineNotePath,
     draggable: data.draggable,
-    onDragStart: (task: TaskflowTask) => (dragTask = task),
+    onDragStart: (task: Task) => (dragTask = task),
     onDragEnd: () => {
       dragTask = null
       dragOverProject = null
@@ -145,10 +147,10 @@
 
 <svelte:window onkeydown={onPanelKeydown} />
 
-<div class="taskflow-panel" bind:clientWidth={panelWidth}>
+<div class="dtp-panel" bind:clientWidth={panelWidth}>
   {#if data.setup.includes('tasks-plugin-missing')}
-    <div class="taskflow-missing">
-      Taskflow needs the Tasks plugin (emoji format) to read your vault's
+    <div class="dtp-missing">
+      Daily Task Panel needs the Tasks plugin (emoji format) to read your vault's
       tasks. Install and enable "Tasks" from the community plugins, and the
       panel will pick it up.
     </div>
@@ -229,12 +231,12 @@
       {#each data.sections.projects as group (group.project.path)}
         {@const folded = projectFolded(data.collapsedProjects, group)}
         <div
-          class="taskflow-project"
-          class:taskflow-drop-ready={dropValid({kind: 'project', path: group.project.path})}
-          class:taskflow-drop-over={dragTask != null && dragOverProject === group.project.path}
-          class:taskflow-drop-before={reorderEdge(group.project.path) === 'before'}
-          class:taskflow-drop-after={reorderEdge(group.project.path) === 'after'}
-          class:taskflow-dragging={dragProject === group.project.path}
+          class="dtp-project"
+          class:dtp-drop-ready={dropValid({kind: 'project', path: group.project.path})}
+          class:dtp-drop-over={dragTask != null && dragOverProject === group.project.path}
+          class:dtp-drop-before={reorderEdge(group.project.path) === 'before'}
+          class:dtp-drop-after={reorderEdge(group.project.path) === 'after'}
+          class:dtp-dragging={dragProject === group.project.path}
           role="presentation"
           ondragenter={ev => {
             if (projectTargetValid(group.project.path)) ev.preventDefault()
@@ -265,7 +267,7 @@
                only inside the movable band); its buttons stay clicks. The
                drop target is the whole group so rows can still land on it. -->
           <div
-            class="taskflow-project-header"
+            class="dtp-project-header"
             role="group"
             aria-label={group.project.name}
             draggable={headerDraggable(group)}
@@ -288,7 +290,7 @@
                  Finder — jumping to the note is the smaller, deliberate act:
                  mod+click, middle-click, or the menu's Open note. -->
             <button
-              class="taskflow-project-toggle"
+              class="dtp-project-toggle"
               aria-expanded={!folded}
               onclick={ev => callbacks.onProjectToggle(group.project.path, folded, ev)}
               onauxclick={ev => {
@@ -296,18 +298,18 @@
               }}
             >
               <span
-                class="taskflow-collapse-icon"
-                class:taskflow-collapsed={folded}
+                class="dtp-collapse-icon"
+                class:dtp-collapsed={folded}
                 aria-hidden="true"
                 use:icon={'chevron-right'}
               ></span>
-              <span class="taskflow-project-name">{group.project.name}</span>
+              <span class="dtp-project-name">{group.project.name}</span>
               <!-- Signals sit with the title (panel grammar): the same count
                    pill section headers wear, so both header levels read alike
                    and the right edge stays dates-only. -->
-              <span class="taskflow-count">{countTaskTree(group.tasks)}</span>
+              <span class="dtp-count">{countTaskTree(group.tasks)}</span>
               {#if group.project.status}
-                <span class="taskflow-status taskflow-status-{group.project.status}">
+                <span class="dtp-status dtp-status-{group.project.status}">
                   {group.project.status}
                 </span>
               {/if}
@@ -316,7 +318,7 @@
               <!-- The pressing loop: calendar says soon, commitments say not
                    yet — one tap answers. Ignoring it is also an answer. -->
               <button
-                class="taskflow-quick-action"
+                class="dtp-quick-action"
                 aria-label="Move to now"
                 onclick={() => callbacks.onPromoteProject(group.project)}
               >
@@ -324,7 +326,7 @@
               </button>
             {/if}
             <button
-              class="taskflow-project-menu"
+              class="dtp-project-menu"
               aria-label="Project actions"
               onclick={ev => callbacks.onProjectMenu(group.project, ev)}
               use:icon={'more-horizontal'}
@@ -338,7 +340,7 @@
                  what edits it (panel grammar): its picker. -->
             {#if group.unstarted && group.project.start != null}
               <button
-                class="taskflow-chip taskflow-chip-button taskflow-chip-start"
+                class="dtp-chip dtp-chip-button dtp-chip-start"
                 aria-label="Project start"
                 onclick={() => callbacks.onProjectStart(group.project)}
               >
@@ -346,8 +348,8 @@
               </button>
             {:else if group.project.deadline != null && data.pacingMode !== 'wip'}
               <button
-                class="taskflow-chip taskflow-chip-button taskflow-chip-due"
-                class:taskflow-chip-past={group.urgency === 'arrived'}
+                class="dtp-chip dtp-chip-button dtp-chip-due"
+                class:dtp-chip-past={group.urgency === 'arrived'}
                 aria-label="Project deadline"
                 onclick={() => callbacks.onProjectDeadline(group.project)}
               >
@@ -377,13 +379,13 @@
          one surface, so it announces the mode, carries its acts (disabled
          until something is picked), and offers the exit. -->
     {#if selecting}
-      <div class="taskflow-select-bar">
-        <span class="taskflow-select-count">
+      <div class="dtp-select-bar">
+        <span class="dtp-select-count">
           {selectedTasks.length > 0 ? `${selectedTasks.length} selected` : 'Select tasks'}
         </span>
         {#if panelWidth >= 380}
           <button
-            class="taskflow-action"
+            class="dtp-action"
             disabled={selectedTasks.length === 0}
             onclick={() => callbacks.onBulkMove(selectedTasks)}
           >
@@ -391,7 +393,7 @@
             move to project
           </button>
           <button
-            class="taskflow-action"
+            class="dtp-action"
             disabled={selectedTasks.length === 0}
             onclick={ev => callbacks.onBulkScheduleMenu(selectedTasks, ev)}
           >
@@ -402,7 +404,7 @@
           <!-- Narrow: both acts fold into one "…" — the ✕ stays the one
                always-enabled control either way. -->
           <button
-            class="taskflow-action"
+            class="dtp-action"
             aria-label="Selection actions"
             disabled={selectedTasks.length === 0}
             onclick={ev => callbacks.onBulkActionsMenu(selectedTasks, ev)}
@@ -410,7 +412,7 @@
           ></button>
         {/if}
         <button
-          class="taskflow-action"
+          class="dtp-action"
           aria-label="Done selecting"
           onclick={toggleSelecting}
           use:icon={'x'}
@@ -419,12 +421,12 @@
     {/if}
 
     {#if data.setup.includes('template-missing')}
-      <div class="taskflow-setup-hint">
+      <div class="dtp-setup-hint">
         Project template not found at "{data.templatePath}" — "New project"
         will use the built-in scaffold.
       </div>
     {/if}
   {:else}
-    <div class="taskflow-empty">Reading tasks…</div>
+    <div class="dtp-empty">Reading tasks…</div>
   {/if}
 </div>

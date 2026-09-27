@@ -3,7 +3,7 @@ import {isCalendarBlock} from './machine-note'
 import {compareProjects, compareUnstarted} from './order'
 import {addDays} from './schedule'
 
-import type {ClassifyConfig, ProjectGroup, ProjectMeta, Sections, TaskflowTask} from './types'
+import type {ClassifyConfig, ProjectGroup, ProjectMeta, Sections, Task} from './types'
 
 export const inFolder = (filePath: string, folder: string): boolean =>
   filePath.startsWith(folder.replace(/\/$/, '') + '/')
@@ -33,7 +33,7 @@ const isEventsHeading = (heading: string) =>
  * A task can appear in more than one section (Today and its project group),
  * so each section trees its own copies — trees never share mutable children.
  */
-const toTree = (tasks: TaskflowTask[]): TaskflowTask[] =>
+const toTree = (tasks: Task[]): Task[] =>
   buildTaskTree(tasks.map(t => ({...t, children: []})))
 
 const ARRIVED = 0
@@ -43,15 +43,15 @@ const band = (group: Pick<ProjectGroup, 'urgency' | 'unstarted'>): number =>
   group.urgency === 'arrived' ? ARRIVED : group.unstarted ? UNSTARTED : RESTING
 
 export const classifySections = (
-  tasks: TaskflowTask[],
+  tasks: Task[],
   projects: ProjectMeta[],
   config: ClassifyConfig,
 ): Sections => {
   // '' means the vault root (the Daily Notes plugin's default location).
-  const underDailyNotes = (t: TaskflowTask) =>
+  const underDailyNotes = (t: Task) =>
     config.dailyNotesFolder === '' || inFolder(t.filePath, config.dailyNotesFolder)
 
-  const isEventsBlock = (t: TaskflowTask) =>
+  const isEventsBlock = (t: Task) =>
     underDailyNotes(t) && t.heading != null && isEventsHeading(t.heading)
 
   const visible = tasks.filter(
@@ -62,7 +62,7 @@ export const classifySections = (
       !isEventsBlock(t),
   )
 
-  const isToday = (t: TaskflowTask) =>
+  const isToday = (t: Task) =>
     t.scheduled === config.today || t.due === config.today
 
   const today = visible.filter(isToday)
@@ -71,8 +71,8 @@ export const classifySections = (
     .filter(t => isInboxCapture(t, config))
     .sort((a, b) => b.filePath.localeCompare(a.filePath) || a.line - b.line)
 
-  const slippedDate = (t: TaskflowTask) => t.due ?? t.scheduled ?? ''
-  const isSlipped = (t: TaskflowTask) =>
+  const slippedDate = (t: Task) => t.due ?? t.scheduled ?? ''
+  const isSlipped = (t: Task) =>
     !isToday(t) &&
     ((t.due != null && t.due < config.today) ||
       (t.scheduled != null && t.scheduled < config.today))
@@ -82,7 +82,7 @@ export const classifySections = (
 
   // Every dated task stays visible somewhere: future-dated tasks outside the
   // projects folder (whose groups already show them) wait here, not nowhere.
-  const upcomingDate = (t: TaskflowTask) => t.scheduled ?? t.due ?? ''
+  const upcomingDate = (t: Task) => t.scheduled ?? t.due ?? ''
   const upcoming = visible
     .filter(
       t =>
@@ -98,14 +98,19 @@ export const classifySections = (
   const deadlinesOn = config.pacingMode !== 'wip'
   const pressEdge = addDays(config.today, Math.max(0, config.pressWindow))
 
+  // One pass groups the visible tasks by note; each project then takes its
+  // own list instead of filtering every task once per project.
+  const byFile = new Map<string, Task[]>()
+  for (const t of visible) {
+    const list = byFile.get(t.filePath)
+    if (list) list.push(t)
+    else byFile.set(t.filePath, [t])
+  }
+
   const projectGroups = projects
     .map(project => ({
       project,
-      tasks: toTree(
-        visible
-          .filter(t => t.filePath === project.path)
-          .sort((a, b) => a.line - b.line),
-      ),
+      tasks: toTree([...(byFile.get(project.path) ?? [])].sort((a, b) => a.line - b.line)),
       // Same urgency grammar as task due chips: red is for dates that have
       // actually arrived, deadline-day included.
       urgency:

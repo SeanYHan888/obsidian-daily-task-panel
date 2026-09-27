@@ -1,6 +1,6 @@
-# Taskflow
+# Daily Task Panel
 
-The sidebar panel that projects the vault's daily-note → project task workflow into four sections. Every task lives in exactly one markdown file; every view (this panel included) is a projection. Taskflow is the reminder; Day Planner is the calendar — time blocks are never Taskflow's business.
+The sidebar panel that projects the vault's daily-note → project task workflow into four sections. Every task lives in exactly one markdown file; every view (this panel included) is a projection. Daily Task Panel is the reminder; Day Planner is the calendar — time blocks are never Daily Task Panel's business.
 
 ## Language
 
@@ -38,7 +38,7 @@ _Avoid_: Today (renamed 2026-08-22; the dated-today rule is unchanged)
 Open tasks due before today, or scheduled before today outside the Apple Sync note. A repair queue: reschedule, complete, or cancel.
 
 **Inbox**:
-Undated open tasks under a daily note's `# Inbox` heading, rendered at the tail of the To-do section. A triage queue: give each task a date, a project, or a cancellation. Checkboxes under other headings are not Taskflow's business. An internal name only: the panel presents this surface as part of To-do, and user-facing copy (menu items, notices, empty states) says To-do, never inbox (#13).
+Undated open tasks under a daily note's `# Inbox` heading, rendered at the tail of the To-do section. A triage queue: give each task a date, a project, or a cancellation. Checkboxes under other headings are not Daily Task Panel's business. An internal name only: the panel presents this surface as part of To-do, and user-facing copy (menu items, notices, empty states) says To-do, never inbox (#13).
 _Avoid_: capture list, unsorted, inbox (in UI copy)
 
 **Upcoming**:
@@ -89,7 +89,7 @@ The act of emptying the Inbox: moving a task to a project, stamping a date, or c
 Physically cutting a task line (with its subtask children) out of its source note into a project note's `## Tasks`. Not a copy, not a link. The source may be a daily note (triage) or another project note (refiling) — the cut defines the move, not the source. Reachable from every row's context menu (#19), the select bar, and a drop on a project header; "Send back to To-do" is the project-row-only inverse. The row menu's "Select multiple" (selectable sections only; renamed from "Select to move" 2026-09-13, since the selection can also be bulk-started) sits beside "Move to project" in the refile group and enters select mode with that row in hand — a refile act, not a mode switch (2026-09-12). The header's "Select tasks" keeps the general name: from a header there is no "this one", and bulk scheduling is a legitimate reason to select.
 
 **Events (`# Events:`)**:
-Day Planner's section of the daily note — time blocks, not tasks. Taskflow never reads or writes it.
+Day Planner's section of the daily note — time blocks, not tasks. Daily Task Panel never reads or writes it.
 
 ### Panel grammar
 
@@ -124,4 +124,4 @@ The one configured note some external tool rewrites on its own schedule (optiona
 _Avoid_: Apple Sync path (as the concept's name — Apple Sync is one instance)
 
 **Apple Sync note**:
-`Indexes/System/Apple Sync.md`, machine-written every 15 minutes by apple-planner-sync — the machine-managed note in Sean's vault. Its Reminders section (📅) is Taskflow's business; its Calendar section (⏳ time blocks) is Day Planner's world and is never projected. Check-off propagates back to Apple Reminders; any other edit gets clobbered on next sync.
+`Indexes/System/Apple Sync.md`, machine-written every 15 minutes by apple-planner-sync — the machine-managed note in Sean's vault. Its Reminders section (📅) is Daily Task Panel's business; its Calendar section (⏳ time blocks) is Day Planner's world and is never projected. Check-off propagates back to Apple Reminders; any other edit gets clobbered on next sync.

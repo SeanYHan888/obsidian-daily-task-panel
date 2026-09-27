@@ -29,7 +29,7 @@ import {getTasksPlugin, onTasksChange, readTasks, toggleTask} from './tasks-plug
 import type {App} from 'obsidian'
 import type {Ports} from '../core/ports'
 import type {SetupFacts} from '../core/setup'
-import type {TaskflowSettings} from '../settings'
+import type {PanelSettings} from '../settings'
 
 /**
  * Wires the adapter implementations to the core ports (ADR-0004) — the one
@@ -41,7 +41,7 @@ import type {TaskflowSettings} from '../settings'
  * refresh, never once at load — a plugin the user enables later must be
  * noticed without a restart.
  */
-export const gatherSetupFacts = (app: App, settings: TaskflowSettings): SetupFacts => ({
+export const gatherSetupFacts = (app: App, settings: PanelSettings): SetupFacts => ({
   tasksPluginAvailable: getTasksPlugin(app) != null,
   dailyNotesConfigured: dailyNotesConfig(app) != null,
   projectsFolderExists:
@@ -56,10 +56,10 @@ export const gatherSetupFacts = (app: App, settings: TaskflowSettings): SetupFac
  * Where daily notes live: the Daily Notes plugin's folder when it is on,
  * the setting as fallback — so inbox classification and send-back agree.
  */
-export const effectiveDailyNotesFolder = (app: App, settings: TaskflowSettings): string =>
+export const effectiveDailyNotesFolder = (app: App, settings: PanelSettings): string =>
   dailyNotesConfig(app)?.folder ?? settings.dailyNotesFolder
 
-export const createPorts = (app: App, settings: () => TaskflowSettings): Ports => ({
+export const createPorts = (app: App, settings: () => PanelSettings): Ports => ({
   tasks: {
     available: () => getTasksPlugin(app) != null,
     read: () => readTasks(app),

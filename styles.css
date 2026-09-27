@@ -1,15 +1,15 @@
-.taskflow-panel {
+.dtp-panel {
   padding: 4px 2px;
   font-size: var(--font-ui-small);
 }
 
-.taskflow-missing {
+.dtp-missing {
   color: var(--text-muted);
   padding: 12px;
 }
 
 /* Non-blocking environment hints (core/setup.ts) — quiet, at the panel foot */
-.taskflow-setup-hint {
+.dtp-setup-hint {
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
   padding: 8px 10px 4px;
@@ -17,11 +17,11 @@
 
 /* Sections */
 
-.taskflow-section {
+.dtp-section {
   margin-bottom: 10px;
 }
 
-.taskflow-panel .taskflow-section-header {
+.dtp-panel .dtp-section-header {
   display: flex;
   justify-content: flex-start;
   white-space: normal;
@@ -39,12 +39,12 @@
   font-weight: 600;
 }
 
-.taskflow-panel .taskflow-section-header:hover {
+.dtp-panel .dtp-section-header:hover {
   color: var(--text-normal);
 }
 
 /* The fold button inside the header: inherits the header's look entirely */
-.taskflow-panel .taskflow-section-toggle {
+.dtp-panel .dtp-section-toggle {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -62,14 +62,14 @@
 /* Type hierarchy: SECTION (caps, largest) → project name (small, bold,
    indented under it) → task text (note-sized). Size states the rank;
    indentation states the containment. */
-.taskflow-section-title {
+.dtp-section-title {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: var(--font-ui-medium, 15px);
   font-weight: 700;
 }
 
-.taskflow-collapse-icon {
+.dtp-collapse-icon {
   display: inline-flex;
   align-items: center;
   transform: rotate(90deg);
@@ -79,11 +79,11 @@
   color: var(--text-faint);
 }
 
-.taskflow-collapse-icon.taskflow-collapsed {
+.dtp-collapse-icon.dtp-collapsed {
   transform: rotate(0deg);
 }
 
-.taskflow-count {
+.dtp-count {
   padding: 0 7px;
   border-radius: 9px;
   background: var(--interactive-normal);
@@ -91,13 +91,13 @@
   font-weight: 500;
 }
 
-.taskflow-count-danger {
+.dtp-count-danger {
   background: rgba(var(--color-red-rgb), 0.15);
   color: var(--color-red);
 }
 
 /* A signal, not an act (panel grammar): sits with the count in the title. */
-.taskflow-badge {
+.dtp-badge {
   padding: 0 7px;
   border-radius: 9px;
   background: rgba(var(--color-green-rgb), 0.15);
@@ -106,16 +106,16 @@
   font-weight: 500;
 }
 
-.taskflow-badge-danger {
+.dtp-badge-danger {
   background: rgba(var(--color-red-rgb), 0.15);
   color: var(--color-red);
 }
 
-.taskflow-section-body {
+.dtp-section-body {
   padding: 4px 0 0;
 }
 
-.taskflow-empty {
+.dtp-empty {
   color: var(--text-faint);
   padding: 2px 10px 4px;
   font-size: var(--font-ui-smaller);
@@ -123,32 +123,32 @@
 
 /* Task cards (the old Checklist look: one card per top-level task) */
 
-.taskflow-item {
+.dtp-item {
   background: var(--interactive-normal);
   border-radius: 8px;
   padding: 6px 10px;
   margin: 0 6px 8px;
 }
 
-.taskflow-item:not(.taskflow-item-nested):hover {
+.dtp-item:not(.dtp-item-nested):hover {
   background: var(--interactive-hover);
 }
 
-.taskflow-item-nested {
+.dtp-item-nested {
   background: transparent;
   border-radius: 0;
   padding: 0;
   margin: 0;
 }
 
-.taskflow-row {
+.dtp-row {
   display: flex;
   align-items: baseline;
   gap: 8px;
   padding: 2px 0;
 }
 
-.taskflow-panel .taskflow-check {
+.dtp-panel .dtp-check {
   flex-shrink: 0;
   display: inline-block;
   min-width: 15px;
@@ -163,12 +163,12 @@
   align-self: center;
 }
 
-.taskflow-panel .taskflow-check:hover {
+.dtp-panel .dtp-check:hover {
   border-color: var(--text-accent);
   background: var(--text-accent);
 }
 
-.taskflow-panel .taskflow-text {
+.dtp-panel .dtp-text {
   flex: 1;
   display: flex;
   justify-content: flex-start;
@@ -189,17 +189,17 @@
   line-height: 1.45;
 }
 
-.taskflow-desc {
+.dtp-desc {
   overflow-wrap: anywhere;
 }
 
-.taskflow-source {
+.dtp-source {
   flex-shrink: 0;
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
 }
 
-.taskflow-panel .taskflow-chip {
+.dtp-panel .dtp-chip {
   flex-shrink: 0;
   display: inline-block;
   border: none;
@@ -215,34 +215,34 @@
   white-space: nowrap;
 }
 
-.taskflow-panel .taskflow-chip-button {
+.dtp-panel .dtp-chip-button {
   cursor: pointer;
 }
 
-.taskflow-panel .taskflow-chip-button:hover {
+.dtp-panel .dtp-chip-button:hover {
   filter: brightness(1.25);
 }
 
 /* A deadline ahead is amber — attention, not alarm. Red is reserved for
    dates that have actually arrived (past, and due-today). */
-.taskflow-panel .taskflow-chip-due {
+.dtp-panel .dtp-chip-due {
   background: rgba(var(--color-orange-rgb), 0.14);
   color: var(--color-orange);
 }
 
-.taskflow-panel .taskflow-chip-past {
+.dtp-panel .dtp-chip-past {
   background: rgba(var(--color-red-rgb), 0.15);
   color: var(--color-red);
 }
 
 /* A project's start while unstarted (#24): neutral — neither the amber nor
    the red urgency grammar, because a future start is not a debt. */
-.taskflow-panel .taskflow-chip-start {
+.dtp-panel .dtp-chip-start {
   background: var(--background-modifier-hover);
   color: var(--text-muted);
 }
 
-.taskflow-children {
+.dtp-children {
   margin-left: 12px;
   border-left: 1px solid var(--background-modifier-border);
   padding-left: 8px;
@@ -251,16 +251,16 @@
 
 /* Project groups */
 
-.taskflow-project {
+.dtp-project {
   margin: 6px 0 12px 10px;
 }
 
-.taskflow-project-name {
+.dtp-project-name {
   font-size: var(--font-ui-small, 13px);
   font-weight: 600;
 }
 
-.taskflow-panel .taskflow-project-menu {
+.dtp-panel .dtp-project-menu {
   flex-shrink: 0;
   height: auto;
   padding: 0 6px;
@@ -273,18 +273,18 @@
   opacity: 0;
 }
 
-.taskflow-project-header:hover .taskflow-project-menu,
-.taskflow-panel .taskflow-project-menu:focus-visible {
+.dtp-project-header:hover .dtp-project-menu,
+.dtp-panel .dtp-project-menu:focus-visible {
   opacity: 1;
 }
 
-.taskflow-panel .taskflow-project-menu:hover {
+.dtp-panel .dtp-project-menu:hover {
   color: var(--text-normal);
   background: var(--interactive-hover);
   border-radius: 6px;
 }
 
-.taskflow-project-header {
+.dtp-project-header {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -294,12 +294,12 @@
 
 /* One date column panel-wide: rows are inset cards (6px margin + 10px
    padding), the header is not — this makes both chips share a right edge. */
-.taskflow-project-header > .taskflow-chip {
+.dtp-project-header > .dtp-chip {
   margin-right: 10px;
 }
 
 /* One big fold target: chevron, name, status, count — the whole line. */
-.taskflow-panel .taskflow-project-toggle {
+.dtp-panel .dtp-project-toggle {
   display: flex;
   justify-content: flex-start;
   white-space: normal;
@@ -318,18 +318,18 @@
   font-weight: 600;
 }
 
-.taskflow-panel .taskflow-project-toggle:hover {
+.dtp-panel .dtp-project-toggle:hover {
   background: var(--interactive-hover);
   border-radius: 6px;
 }
 
-.taskflow-panel .taskflow-project-toggle .taskflow-collapse-icon {
+.dtp-panel .dtp-project-toggle .dtp-collapse-icon {
   flex-shrink: 0;
   padding: 0 4px;
   color: var(--text-muted);
 }
 
-.taskflow-status {
+.dtp-status {
   padding: 0 6px;
   border-radius: 8px;
   font-size: 10px;
@@ -338,12 +338,12 @@
   color: var(--text-muted);
 }
 
-.taskflow-status-now {
+.dtp-status-now {
   background: rgba(var(--color-green-rgb), 0.15);
   color: var(--color-green);
 }
 
-.taskflow-status-next {
+.dtp-status-next {
   background: rgba(var(--color-blue-rgb), 0.15);
   color: var(--color-blue);
 }
@@ -353,7 +353,7 @@
 
 /* A real click target, not a decoration: 16px glyph in a ~32×26 box, plus
    a forgiving invisible halo — mis-aiming here used to hit the row instead. */
-.taskflow-panel .taskflow-add-date {
+.dtp-panel .dtp-add-date {
   flex-shrink: 0;
   align-self: center;
   display: inline-block;
@@ -368,29 +368,29 @@
   opacity: 0.4;
 }
 
-.taskflow-panel .taskflow-add-date::before {
+.dtp-panel .dtp-add-date::before {
   content: '';
   position: absolute;
   inset: -6px;
 }
 
-.taskflow-panel .taskflow-add-date:hover {
+.dtp-panel .dtp-add-date:hover {
   background: var(--interactive-hover);
   border-radius: 6px;
 }
 
-.taskflow-row:hover .taskflow-add-date,
-.taskflow-panel .taskflow-add-date:hover {
+.dtp-row:hover .dtp-add-date,
+.dtp-panel .dtp-add-date:hover {
   opacity: 1;
 }
 
-.taskflow-actions {
+.dtp-actions {
   display: flex;
   gap: 4px;
   padding: 4px 0 2px 23px;
 }
 
-.taskflow-panel .taskflow-action {
+.dtp-panel .dtp-action {
   display: inline-block;
   height: auto;
   padding: 1px 8px;
@@ -404,13 +404,13 @@
   white-space: nowrap;
 }
 
-.taskflow-panel .taskflow-action:hover {
+.dtp-panel .dtp-action:hover {
   color: var(--text-normal);
   border-color: var(--background-modifier-border-hover);
   background: var(--interactive-hover);
 }
 
-.taskflow-panel .taskflow-action-danger:hover {
+.dtp-panel .dtp-action-danger:hover {
   color: var(--color-red);
   border-color: var(--color-red);
 }
@@ -418,7 +418,7 @@
 /* The section header's "…" (#15): the project header's quiet, hover-revealed
    treatment, one level up. The right edge holds acts only — at most one
    pressing accelerator, then this menu when the section has acts. */
-.taskflow-panel .taskflow-section-menu {
+.dtp-panel .dtp-section-menu {
   flex-shrink: 0;
   margin-left: auto;
   height: auto;
@@ -436,28 +436,28 @@
   --icon-size: 14px;
 }
 
-.taskflow-section-header:hover .taskflow-section-menu,
-.taskflow-panel .taskflow-section-menu:focus-visible {
+.dtp-section-header:hover .dtp-section-menu,
+.dtp-panel .dtp-section-menu:focus-visible {
   opacity: 1;
 }
 
-.taskflow-panel .taskflow-section-menu:hover {
+.dtp-panel .dtp-section-menu:hover {
   color: var(--text-normal);
   background: var(--interactive-hover);
   border-radius: 6px;
 }
 
-.is-mobile .taskflow-panel .taskflow-section-menu {
+.is-mobile .dtp-panel .dtp-section-menu {
   opacity: 0.7;
 }
 
-.taskflow-modal-submit {
+.dtp-modal-submit {
   margin-left: 8px;
 }
 
 /* Triage select mode (v0.3) */
 
-.taskflow-panel .taskflow-select-box {
+.dtp-panel .dtp-select-box {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -477,13 +477,13 @@
   color: transparent;
 }
 
-.taskflow-panel .taskflow-select-box.taskflow-selected {
+.dtp-panel .dtp-select-box.dtp-selected {
   border-color: var(--interactive-accent);
   background: var(--interactive-accent);
   color: var(--text-on-accent);
 }
 
-.taskflow-row-selected {
+.dtp-row-selected {
   background: rgba(var(--color-blue-rgb), 0.08);
 }
 
@@ -492,7 +492,7 @@
    card, not a tinted strip: quiet colors, real border and shadow — obvious
    by shape and presence (it appears the moment select mode starts), not by
    loudness. */
-.taskflow-select-bar {
+.dtp-select-bar {
   position: sticky;
   bottom: 4px;
   display: flex;
@@ -507,72 +507,72 @@
   box-shadow: var(--shadow-s);
 }
 
-.taskflow-select-count {
+.dtp-select-count {
   color: var(--text-normal);
   font-size: var(--font-ui-small);
   font-weight: 600;
   margin-right: auto;
 }
 
-.taskflow-select-bar .taskflow-action {
+.dtp-select-bar .dtp-action {
   gap: 5px;
   padding: 6px 12px;
   font-size: var(--font-ui-small);
   --icon-size: 15px;
 }
 
-.taskflow-select-bar .taskflow-action:disabled {
+.dtp-select-bar .dtp-action:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-.taskflow-select-bar .taskflow-action:disabled:hover {
+.dtp-select-bar .dtp-action:disabled:hover {
   color: var(--text-muted);
   border-color: var(--background-modifier-border);
   background: transparent;
 }
 
-.taskflow-modal-input {
+.dtp-modal-input {
   width: 240px;
 }
 
 /* Drag and drop (v0.5): targets light up on lift, glow under the row */
 
-.taskflow-panel .taskflow-drop-ready {
+.dtp-panel .dtp-drop-ready {
   outline: 1px dashed var(--background-modifier-border-hover);
   outline-offset: -1px;
   border-radius: 6px;
 }
 
-.taskflow-panel .taskflow-drop-over {
+.dtp-panel .dtp-drop-over {
   outline: 2px dashed var(--interactive-accent);
   outline-offset: -2px;
   background: var(--interactive-hover);
 }
 
-.taskflow-row[draggable='true'] {
+.dtp-row[draggable='true'] {
   cursor: grab;
 }
 
 /* Drag-to-reorder (#21): a header lifts; the landing slot shows as one line
    above or below the target, so it never reads like a row dropping *into* it. */
-.taskflow-project-header[draggable='true'] {
+.dtp-project-header[draggable='true'] {
   cursor: grab;
 }
 
-.taskflow-panel .taskflow-dragging {
+.dtp-panel .dtp-dragging {
   opacity: 0.5;
 }
 
-.taskflow-panel .taskflow-drop-before {
+.dtp-panel .dtp-drop-before {
   box-shadow: inset 0 2px 0 0 var(--interactive-accent);
 }
 
-.taskflow-panel .taskflow-drop-after {
+.dtp-panel .dtp-drop-after {
   box-shadow: inset 0 -2px 0 0 var(--interactive-accent);
 }
 
-.taskflow-panel button:focus-visible {
+.dtp-panel button:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 1px;
   opacity: 1;
@@ -580,12 +580,12 @@
 
 /* Mobile: bigger tap targets, affordances always visible */
 
-.is-mobile .taskflow-row {
+.is-mobile .dtp-row {
   padding: 7px 6px;
 }
 
-.is-mobile .taskflow-panel .taskflow-check,
-.is-mobile .taskflow-panel .taskflow-select-box {
+.is-mobile .dtp-panel .dtp-check,
+.is-mobile .dtp-panel .dtp-select-box {
   flex: 0 0 19px;
   min-width: 19px;
   max-width: 19px;
@@ -596,21 +596,21 @@
   padding: 0;
 }
 
-.is-mobile .taskflow-panel .taskflow-add-date {
+.is-mobile .dtp-panel .dtp-add-date {
   opacity: 0.7;
 }
 
-.is-mobile .taskflow-panel .taskflow-action {
+.is-mobile .dtp-panel .dtp-action {
   padding: 4px 12px;
 }
 
-.is-mobile .taskflow-actions {
+.is-mobile .dtp-actions {
   padding-bottom: 8px;
 }
 
 /* Narrow panels: long source labels truncate instead of squeezing the text */
 
-.taskflow-source {
+.dtp-source {
   max-width: 40%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -618,45 +618,45 @@
 
 /* Mobile: 19px visuals, ~44px touch areas via invisible overlay */
 
-.is-mobile .taskflow-panel .taskflow-check,
-.is-mobile .taskflow-panel .taskflow-select-box {
+.is-mobile .dtp-panel .dtp-check,
+.is-mobile .dtp-panel .dtp-select-box {
   position: relative;
 }
 
-.is-mobile .taskflow-panel .taskflow-check::before,
-.is-mobile .taskflow-panel .taskflow-select-box::before {
+.is-mobile .dtp-panel .dtp-check::before,
+.is-mobile .dtp-panel .dtp-select-box::before {
   content: '';
   position: absolute;
   inset: -12px;
 }
 
-.is-mobile .taskflow-row {
+.is-mobile .dtp-row {
   min-height: 36px;
 }
 
 /* Lucide glyphs (ui/icon.ts): center the svg and size it per control */
-.taskflow-panel .taskflow-project-menu {
+.dtp-panel .dtp-project-menu {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   --icon-size: 14px;
 }
 
-.taskflow-panel .taskflow-add-date {
+.dtp-panel .dtp-add-date {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   --icon-size: 16px;
 }
 
-.taskflow-panel .taskflow-action {
+.dtp-panel .dtp-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   --icon-size: 13px;
 }
 
-.taskflow-select-mark {
+.dtp-select-mark {
   display: inline-flex;
   align-items: center;
   --icon-size: 11px;
@@ -664,9 +664,9 @@
 
 /* Obsidian removes its transitions under reduced motion; so does the panel */
 @media (prefers-reduced-motion: reduce) {
-  .taskflow-panel *,
-  .taskflow-panel *::before,
-  .taskflow-panel *::after {
+  .dtp-panel *,
+  .dtp-panel *::before,
+  .dtp-panel *::after {
     transition: none !important;
     animation: none !important;
   }
@@ -676,7 +676,7 @@
    is pressing for a decision — today, → now on a header whose deadline is
    inside the attention window while the project isn't committed. Chip-shaped,
    hover-revealed, always mirrored by a menu item. */
-.taskflow-panel .taskflow-quick-action {
+.dtp-panel .dtp-quick-action {
   flex-shrink: 0;
   align-self: center;
   display: inline-block;
@@ -694,15 +694,15 @@
   opacity: 0;
 }
 
-.taskflow-project-header:hover .taskflow-quick-action,
-.taskflow-panel .taskflow-quick-action:focus-visible {
+.dtp-project-header:hover .dtp-quick-action,
+.dtp-panel .dtp-quick-action:focus-visible {
   opacity: 1;
 }
 
-.taskflow-panel .taskflow-quick-action:hover {
+.dtp-panel .dtp-quick-action:hover {
   background: var(--interactive-hover);
 }
 
-.is-mobile .taskflow-panel .taskflow-quick-action {
+.is-mobile .dtp-panel .dtp-quick-action {
   opacity: 0.7;
 }

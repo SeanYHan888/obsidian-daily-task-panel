@@ -4,14 +4,14 @@ import {classifySections} from '../src/core/classify'
 import {dropIntent} from '../src/core/drop'
 import {editableTasks, isMachineManaged, rowAffordances} from '../src/core/machine-note'
 
-import type {ClassifyConfig, TaskflowTask} from '../src/core/types'
+import type {ClassifyConfig, Task} from '../src/core/types'
 
 const MANAGED = 'Sync/Reminders.md'
 const CONFIG = {machineNotePath: MANAGED}
 const NONE = {machineNotePath: ''}
 
 let nextLine = 0
-const task = (overrides: Partial<TaskflowTask> = {}): TaskflowTask => ({
+const task = (overrides: Partial<Task> = {}): Task => ({
   description: 'a task',
   filePath: 'Daily Notes/2026/08/08-21, Fri.md',
   line: nextLine++,

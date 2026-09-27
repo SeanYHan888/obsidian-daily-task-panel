@@ -5,7 +5,7 @@ import {postponeAnchor, resolveQuickDate} from './schedule'
 import type {MachineNoteConfig} from './machine-note'
 import type {QuickDate, RelativeDate} from './schedule'
 import type {MoveDirection} from './order'
-import type {PacingMode, ProjectMeta, ProjectStatus, TaskflowTask} from './types'
+import type {PacingMode, ProjectMeta, ProjectStatus, Task} from './types'
 
 /**
  * Menus as data: core decides which items exist, what they say, and what
@@ -93,7 +93,7 @@ export type ScheduleMenuConfig = {projectsFolder: string; today: string}
  * source to send back from. No label: the chip already says which field.
  */
 export const scheduleMenuSpec = (
-  tasks: readonly TaskflowTask[],
+  tasks: readonly Task[],
   config: ScheduleMenuConfig,
 ): MenuItemSpec[] => {
   const refile = bulkRefileItems(tasks, config)
@@ -107,7 +107,7 @@ export const scheduleMenuSpec = (
  * to postpone (core/schedule postponeAnchor; a selection has no one anchor)
  * — the relative pair, then the picker and Clear start.
  */
-const planItems = (tasks: readonly TaskflowTask[], config: ScheduleMenuConfig): MenuItemSpec[] => {
+const planItems = (tasks: readonly Task[], config: ScheduleMenuConfig): MenuItemSpec[] => {
   const spec: MenuItemSpec[] = QUICK_DATES.map(({kind, title, icon}) => {
     const date = resolveQuickDate(kind, config.today)
     const held = tasks.length > 0 && tasks.every(t => t.scheduled === date || t.due === date)
@@ -135,7 +135,7 @@ const COMPLETE = item('Complete task', 'circle-check', {type: 'complete'})
  * selections get their move on the select bar instead).
  */
 const bulkRefileItems = (
-  tasks: readonly TaskflowTask[],
+  tasks: readonly Task[],
   config: ScheduleMenuConfig,
 ): MenuItemSpec[] => {
   const fromProject =
@@ -151,7 +151,7 @@ const bulkRefileItems = (
  * can also be sent back.
  */
 const rowRefileItems = (
-  task: TaskflowTask,
+  task: Task,
   config: ScheduleMenuConfig & SelectMenuConfig,
 ): MenuItemSpec[] => {
   const spec: MenuItemSpec[] = [MOVE_TO_PROJECT]
@@ -175,7 +175,7 @@ const rowRefileItems = (
  * Clear). No quick dates — a deadline is an external fact, not a plan, so
  * it is picked, never guessed at from "weekend".
  */
-export const dueMenuSpec = (task: TaskflowTask): MenuItemSpec[] => {
+export const dueMenuSpec = (task: Task): MenuItemSpec[] => {
   const spec: MenuItemSpec[] = [
     item(
       task.due == null ? 'Set due date' : 'Change due date',
@@ -203,7 +203,7 @@ export type SelectMenuConfig = {
  * one edit its note survives; every other line edit would be clobbered.
  */
 export const taskMenuSpec = (
-  task: TaskflowTask,
+  task: Task,
   config: ScheduleMenuConfig & MachineNoteConfig & SelectMenuConfig,
 ): MenuItemSpec[] => {
   const open = item('Open note', 'file-text', {type: 'open-note'})
@@ -271,7 +271,7 @@ export const sectionMenuSpec = (config: SectionMenuConfig): MenuItemSpec[] => {
  * when the spec doesn't already carry it.
  */
 export const selectBarMenuSpec = (
-  tasks: readonly TaskflowTask[],
+  tasks: readonly Task[],
   config: ScheduleMenuConfig,
 ): MenuItemSpec[] => {
   const spec = scheduleMenuSpec(tasks, config)

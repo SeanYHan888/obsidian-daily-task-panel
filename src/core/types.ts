@@ -1,7 +1,7 @@
 import type {HierarchyItem} from './hierarchy'
 
 /** One markdown checkbox line, as projected through the task-source port. */
-export type TaskflowTask = HierarchyItem & {
+export type Task = HierarchyItem & {
   description: string
   /**
    * The exact markdown of the line at read time — the line editor's write
@@ -18,7 +18,7 @@ export type TaskflowTask = HierarchyItem & {
   due: string | null
   /** Text of the nearest heading above the task, without `#` marks. */
   heading: string | null
-  children: TaskflowTask[]
+  children: Task[]
 }
 
 export type ProjectStatus = 'now' | 'next' | 'later'
@@ -41,7 +41,7 @@ export type ProjectMeta = {
 
 export type ProjectGroup = {
   project: ProjectMeta
-  tasks: TaskflowTask[]
+  tasks: Task[]
   /** 'ahead' (amber) until the deadline, 'arrived' (red) from that day on, null when undated or in wip mode. */
   urgency: 'ahead' | 'arrived' | null
   /**
@@ -73,7 +73,7 @@ export type ClassifyConfig = {
   projectsFolder: string
   /** The machine-managed note (see core/machine-note.ts), or '' when none. */
   machineNotePath: string
-  /** Heading text without `#` marks; capture outside it is not Taskflow's business. */
+  /** Heading text without `#` marks; capture outside it is not the panel's business. */
   inboxHeading: string
   pacingMode: PacingMode
   /** Days before a deadline that hybrid mode starts pressing; 0 waits for arrival. */
@@ -81,11 +81,11 @@ export type ClassifyConfig = {
 }
 
 export type Sections = {
-  today: TaskflowTask[]
-  slipped: TaskflowTask[]
+  today: Task[]
+  slipped: Task[]
   /** Future-dated tasks outside the projects folder — visible while they wait. */
-  upcoming: TaskflowTask[]
-  inbox: TaskflowTask[]
+  upcoming: Task[]
+  inbox: Task[]
   projects: ProjectGroup[]
   /** Rendered project groups with status `now`, for the WIP badge. */
   wipNowCount: number

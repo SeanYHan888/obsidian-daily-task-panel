@@ -1,26 +1,26 @@
-# Taskflow
+# Daily Task Panel
 
-An Obsidian sidebar panel that turns daily-note capture into project execution. Your markdown is the database; the panel is a projection of it — Taskflow keeps no task store of its own, mints no IDs, and edits a task line only when you act on it. Every action is a plain text edit you could have made yourself, and every panel action has an undo.
+An Obsidian sidebar panel that turns daily-note capture into project execution. Your markdown is the database; the panel is a projection of it — Daily Task Panel keeps no task store of its own, mints no IDs, and edits a task line only when you act on it. Every action is a plain text edit you could have made yourself, and every panel action has an undo.
 
-> **Alpha** — Taskflow is in friends-and-family testing ahead of a community-directory submission. Issues and feedback very welcome.
+> **Alpha** — Daily Task Panel is in friends-and-family testing ahead of a community-directory submission. Issues and feedback very welcome.
 
-<img src="images/panel-todo.png" alt="The Taskflow panel: To-do with inbox captures, and the Overdue & slipped repair queue" width="420">
+<img src="images/panel-todo.png" alt="The Daily Task Panel: To-do with inbox captures, and the Overdue & slipped repair queue" width="420">
 
 ## Install (alpha)
 
-Taskflow isn't in the community directory yet. Two ways in:
+Daily Task Panel isn't in the community directory yet. Two ways in:
 
-- **BRAT** (recommended): install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin, then *Add beta plugin* → `SeanYHan888/obsidian-taskflow`. BRAT keeps you on the latest release.
-- **Manual**: download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/SeanYHan888/obsidian-taskflow/releases), put them in `<your vault>/.obsidian/plugins/taskflow/`, reload Obsidian, and enable Taskflow in *Settings → Community plugins*.
+- **BRAT** (recommended): install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin, then *Add beta plugin* → `SeanYHan888/obsidian-daily-task-panel`. BRAT keeps you on the latest release.
+- **Manual**: download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/SeanYHan888/obsidian-daily-task-panel/releases), put them in `<your vault>/.obsidian/plugins/daily-task-panel/`, reload Obsidian, and enable Daily Task Panel in *Settings → Community plugins*.
 
-**Requirements:** Obsidian 1.7.2+ and the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin in its default emoji format. Taskflow reads tasks through Tasks and completes them through its API, so done-dates, recurrence, and any downstream sync keep working. Without it, the panel tells you what's missing instead of rendering.
+**Requirements:** Obsidian 1.7.2+ and the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin in its default emoji format. Daily Task Panel reads tasks through Tasks and completes them through its API, so done-dates, recurrence, and any downstream sync keep working. Without it, the panel tells you what's missing instead of rendering.
 
 ## 60-second start
 
-1. Install and enable **Tasks**, then **Taskflow**. The panel opens in the right sidebar (or run the *Open panel* command).
-2. Put `- [ ] try Taskflow ⏳ 2026-08-24` (today's date) in any note → it appears in **To-do**.
+1. Install and enable **Tasks**, then **Daily Task Panel**. The panel opens in the right sidebar (or run the *Open panel* command).
+2. Put `- [ ] try the panel ⏳ 2026-08-24` (today's date) in any note → it appears in **To-do**.
 3. Enable the core **Daily Notes** plugin and add an `# Inbox` heading to today's note. Any task you jot under it shows up at the tail of To-do, waiting for triage.
-4. When you're ready for projects: create a `Projects/Active` folder and give each project note a `status: now|next|later` frontmatter field. (Or skip this — Taskflow works fine as a pure daily-note panel, and the Projects section will explain the workflow when you want it.)
+4. When you're ready for projects: create a `Projects/Active` folder and give each project note a `status: now|next|later` frontmatter field. (Or skip this — Daily Task Panel works fine as a pure daily-note panel, and the Projects section will explain the workflow when you want it.)
 
 ## The model
 
@@ -56,7 +56,7 @@ Sections are disjoint views of one thing — the date on the line. Tasks never "
 
 <img src="images/panel-select.png" alt="Select mode: two inbox captures selected, with the bulk move-to-project bar" width="420">
 
-**Move to project** physically cuts the task lines — subtask children included — out of their source and appends them under your project note's `## Tasks` heading (configurable). Choose *+ New project* in the picker and Taskflow creates the note for you, from your template if you set one, from a minimal built-in scaffold if not. **Send back to To-do** (on a backlog task's menu) is the inverse: the line returns to today's daily note under your inbox heading. The row menu also carries *Edit text* (the words change, dates and tags stay) and *Complete task*.
+**Move to project** physically cuts the task lines — subtask children included — out of their source and appends them under your project note's `## Tasks` heading (configurable). Choose *+ New project* in the picker and Daily Task Panel creates the note for you, from your template if you set one, from a minimal built-in scaffold if not. **Send back to To-do** (on a backlog task's menu) is the inverse: the line returns to today's daily note under your inbox heading. The row menu also carries *Edit text* (the words change, dates and tags stay) and *Complete task*.
 
 **Undo.** Every line edit — reschedules, cancels, moves, bulk sweeps — shows a notice with an *Undo* link, and the *Undo last panel action* command replays the journal backwards. Undo verifies each line still reads what the action left before restoring it; anything you've edited since is skipped, never guessed at.
 
@@ -108,13 +108,17 @@ Switching modes is lossless: statuses, starts, and deadlines live in your notes'
 
 ## Playing well with others
 
-Taskflow interoperates through shared markdown, not APIs:
+Daily Task Panel interoperates through shared markdown, not APIs:
 
-- **Tasks** owns parsing and completion side effects — Taskflow never invents its own task format.
+- **Tasks** owns parsing and completion side effects — Daily Task Panel never invents its own task format.
 - **Day Planner** owns time: daily-note `# Events:` sections are never read or written.
 - **Kanban**: the move-target heading is configurable, so a project note that becomes a board keeps receiving triaged tasks.
 - **Sync tools**: the machine-managed note setting is the generic contract for any note-rewriting tool.
 
+## Upgrading from Taskflow
+
+This plugin was called Taskflow until September 2026. The new name comes with a new plugin id, so it installs into a new folder. Enable Daily Task Panel first: on its first start it copies your Taskflow settings. Then disable Taskflow and delete its folder. Hotkeys you had bound to Taskflow's commands need binding again.
+
 ## Credits
 
-Taskflow began as a fork of [obsidian-checklist-plugin](https://github.com/delashum/obsidian-checklist-plugin) by delashum, whose minimalist card-list look it keeps. MIT licensed; original license retained.
+Daily Task Panel (formerly Taskflow) began as a fork of [obsidian-checklist-plugin](https://github.com/delashum/obsidian-checklist-plugin) by delashum, whose minimalist card-list look it keeps. MIT licensed; original license retained.

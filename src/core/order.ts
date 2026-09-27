@@ -19,11 +19,11 @@ export type MoveDirection = 'top' | 'up' | 'down' | 'bottom'
 /** Sorts after every real ISO date, so undated projects follow dated ones. */
 const NO_DEADLINE = '9999-99-99'
 
-export const statusRank = (status: ProjectStatus | null): number =>
+const statusRank = (status: ProjectStatus | null): number =>
   status === 'now' ? 0 : status === 'next' ? 1 : status === 'later' ? 2 : 3
 
 /** The pacing rules alone — how unranked projects (and ties) are ordered. */
-export const comparePacing = (a: ProjectMeta, b: ProjectMeta, pacingMode: PacingMode): number => {
+const comparePacing = (a: ProjectMeta, b: ProjectMeta, pacingMode: PacingMode): number => {
   const deadlinesOn = pacingMode !== 'wip'
   const aDeadline = deadlinesOn ? (a.deadline ?? NO_DEADLINE) : NO_DEADLINE
   const bDeadline = deadlinesOn ? (b.deadline ?? NO_DEADLINE) : NO_DEADLINE

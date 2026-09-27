@@ -41,7 +41,7 @@ const prompt = <T>(
 const submitButton = (modal: Modal, label: string, onClick: () => void) => {
   const button = modal.contentEl.createEl('button', {
     text: label,
-    cls: 'taskflow-modal-submit',
+    cls: 'dtp-modal-submit',
   })
   button.addEventListener('click', onClick)
   return button
@@ -85,7 +85,7 @@ export const askText = (
       placeholder: opts.placeholder,
       value: opts.value ?? '',
     })
-    input.addClass('taskflow-modal-input')
+    input.addClass('dtp-modal-input')
     const go = () => {
       const value = input.value.trim()
       if (value) submit(value)

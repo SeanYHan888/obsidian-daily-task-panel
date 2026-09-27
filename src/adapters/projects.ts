@@ -63,7 +63,7 @@ const editFrontmatter = async (
 ): Promise<boolean> => {
   const file = app.vault.getAbstractFileByPath(projectPath)
   if (!(file instanceof TFile)) {
-    new Notice(`Taskflow: project note not found: ${projectPath}`)
+    new Notice(`Daily Task Panel: project note not found: ${projectPath}`)
     return false
   }
   await app.fileManager.processFrontMatter(file, mutate)
@@ -123,14 +123,14 @@ export const archiveProject = async (
 ): Promise<boolean> => {
   const file = app.vault.getAbstractFileByPath(projectPath)
   if (!(file instanceof TFile)) {
-    new Notice(`Taskflow: project note not found: ${projectPath}`)
+    new Notice(`Daily Task Panel: project note not found: ${projectPath}`)
     return false
   }
 
   const folder = normalizePath(archiveFolder)
   const target = normalizePath(`${folder}/${file.name}`)
   if (app.vault.getAbstractFileByPath(target)) {
-    new Notice(`Taskflow: "${file.basename}" already exists in ${folder} — move it by hand`)
+    new Notice(`Daily Task Panel: "${file.basename}" already exists in ${folder} — move it by hand`)
     return false
   }
 
@@ -156,19 +156,19 @@ export const renameProject = async (
 ): Promise<string | null> => {
   const file = app.vault.getAbstractFileByPath(projectPath)
   if (!(file instanceof TFile)) {
-    new Notice(`Taskflow: project note not found: ${projectPath}`)
+    new Notice(`Daily Task Panel: project note not found: ${projectPath}`)
     return null
   }
   const target = normalizePath(`${file.parent?.path ?? ''}/${name}.${file.extension}`)
   if (target === file.path) return null
   if (app.vault.getAbstractFileByPath(target)) {
-    new Notice(`Taskflow: "${name}" already exists — pick another name`)
+    new Notice(`Daily Task Panel: "${name}" already exists — pick another name`)
     return null
   }
   try {
     await app.fileManager.renameFile(file, target)
   } catch (error) {
-    new Notice(`Taskflow: could not rename to "${name}" — ${String(error)}`)
+    new Notice(`Daily Task Panel: could not rename to "${name}" — ${String(error)}`)
     return null
   }
   return target

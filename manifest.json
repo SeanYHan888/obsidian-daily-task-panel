@@ -1,6 +1,6 @@
 {
-	"id": "taskflow",
-	"name": "Taskflow",
+	"id": "daily-task-panel",
+	"name": "Daily Task Panel",
 	"version": "0.5.8",
 	"minAppVersion": "1.7.2",
 	"description": "Turn daily-note capture into project execution: to-do, overdue and slipped, upcoming, and project backlogs in one sidebar panel.",

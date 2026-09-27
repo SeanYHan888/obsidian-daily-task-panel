@@ -4,7 +4,7 @@ import {classifySections} from '../src/core/classify'
 import {projectMenuSpec} from '../src/core/menus'
 import {promotionOutcome, wipBadge} from '../src/core/sections'
 
-import type {ClassifyConfig, ProjectMeta, TaskflowTask} from '../src/core/types'
+import type {ClassifyConfig, ProjectMeta, Task} from '../src/core/types'
 
 const CONFIG: ClassifyConfig = {
   today: '2026-08-21',
@@ -17,7 +17,7 @@ const CONFIG: ClassifyConfig = {
 }
 
 let nextLine = 0
-const task = (filePath: string): TaskflowTask => ({
+const task = (filePath: string): Task => ({
   description: 'a task',
   filePath,
   line: nextLine++,

@@ -1,5 +1,5 @@
 import type {JournalEntry} from './journal'
-import type {ProjectMeta, ProjectStatus, TaskflowTask} from './types'
+import type {ProjectMeta, ProjectStatus, Task} from './types'
 
 /**
  * What the core needs from the outside world, as three narrow contracts
@@ -14,9 +14,9 @@ import type {ProjectMeta, ProjectStatus, TaskflowTask} from './types'
 export type TaskSource = {
   /** Absence is a first-class state the panel explains, never an error. */
   available(): boolean
-  read(): TaskflowTask[]
+  read(): Task[]
   /** Completion goes through the source of truth or not at all (ADR-0001). */
-  toggle(task: TaskflowTask): Promise<void>
+  toggle(task: Task): Promise<void>
   /** Fires when the source's projection may have changed; returns unsubscribe. */
   onChange(listener: () => void): () => void
 }
@@ -48,16 +48,16 @@ export type MoveOutcome = {moved: number; entry: JournalEntry | null}
  */
 export type LineEditor = {
   /** Stamps the plan; `today` decides whether a 📅 is live or spent (see setScheduled). */
-  reschedule(tasks: TaskflowTask[], date: string, today: string): Promise<JournalEntry | null>
-  unschedule(tasks: TaskflowTask[]): Promise<JournalEntry | null>
+  reschedule(tasks: Task[], date: string, today: string): Promise<JournalEntry | null>
+  unschedule(tasks: Task[]): Promise<JournalEntry | null>
   /** The 📅 field's own writers (#18) — scheduling never touches a live deadline. */
-  setDue(tasks: TaskflowTask[], date: string): Promise<JournalEntry | null>
-  clearDue(tasks: TaskflowTask[]): Promise<JournalEntry | null>
-  cancel(task: TaskflowTask): Promise<JournalEntry | null>
+  setDue(tasks: Task[], date: string): Promise<JournalEntry | null>
+  clearDue(tasks: Task[]): Promise<JournalEntry | null>
+  cancel(task: Task): Promise<JournalEntry | null>
   /** Swaps the task's words; checkbox, dates and block reference stay. */
-  editText(task: TaskflowTask, text: string): Promise<JournalEntry | null>
-  moveToProject(tasks: TaskflowTask[], projectPath: string): Promise<MoveOutcome>
-  sendBackToInbox(tasks: TaskflowTask[], today: string): Promise<MoveOutcome>
+  editText(task: Task, text: string): Promise<JournalEntry | null>
+  moveToProject(tasks: Task[], projectPath: string): Promise<MoveOutcome>
+  sendBackToInbox(tasks: Task[], today: string): Promise<MoveOutcome>
   /** Appends one new task line under the project's move-target heading. */
   addTask(projectPath: string, text: string): Promise<JournalEntry | null>
 }

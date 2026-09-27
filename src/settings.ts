@@ -2,11 +2,11 @@ import {PluginSettingTab, Setting} from 'obsidian'
 
 import type {App} from 'obsidian'
 import type {PacingMode} from './core/types'
-import type TaskflowPlugin from './main'
+import type DailyTaskPanelPlugin from './main'
 
 export type SectionKey = 'today' | 'slipped' | 'upcoming' | 'inbox' | 'projects'
 
-export type TaskflowSettings = {
+export type PanelSettings = {
   dailyNotesFolder: string
   projectsFolder: string
   archiveFolder: string
@@ -26,7 +26,7 @@ export type TaskflowSettings = {
   collapsedProjects: Record<string, boolean>
 }
 
-export const DEFAULT_SETTINGS: TaskflowSettings = {
+export const DEFAULT_SETTINGS: PanelSettings = {
   dailyNotesFolder: 'Daily Notes',
   projectsFolder: 'Projects/Active',
   archiveFolder: 'Projects/Archive',
@@ -42,13 +42,11 @@ export const DEFAULT_SETTINGS: TaskflowSettings = {
   collapsedProjects: {},
 }
 
-/** Pre-rename key (was Apple-Sync-specific); migrated on load, never written back. */
-export type LegacySettings = {appleSyncPath?: string}
 
-export class TaskflowSettingTab extends PluginSettingTab {
+export class PanelSettingTab extends PluginSettingTab {
   constructor(
     app: App,
-    private plugin: TaskflowPlugin,
+    private plugin: DailyTaskPanelPlugin,
   ) {
     super(app, plugin)
   }
@@ -59,7 +57,7 @@ export class TaskflowSettingTab extends PluginSettingTab {
     const text = (
       name: string,
       desc: string,
-      key: {[K in keyof TaskflowSettings]: TaskflowSettings[K] extends string ? K : never}[keyof TaskflowSettings],
+      key: {[K in keyof PanelSettings]: PanelSettings[K] extends string ? K : never}[keyof PanelSettings],
       placeholder: string,
       /** Optional fields may be blanked; required ones fall back to the default. */
       optional = false,

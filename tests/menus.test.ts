@@ -10,7 +10,7 @@ import {
 } from '../src/core/menus'
 
 import type {MenuItemSpec} from '../src/core/menus'
-import type {ProjectMeta, TaskflowTask} from '../src/core/types'
+import type {ProjectMeta, Task} from '../src/core/types'
 
 const CONFIG = {
   projectsFolder: 'Projects/Active',
@@ -21,7 +21,7 @@ const CONFIG = {
 }
 
 let nextLine = 0
-const task = (overrides: Partial<TaskflowTask> = {}): TaskflowTask => ({
+const task = (overrides: Partial<Task> = {}): Task => ({
   description: 'a task',
   filePath: 'Daily Notes/2026/08/08-21, Fri.md',
   line: nextLine++,

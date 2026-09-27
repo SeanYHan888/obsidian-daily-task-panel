@@ -8,10 +8,10 @@ import process from 'process'
 const DEPLOYED_FILES = ['main.js', 'manifest.json', 'styles.css']
 const BUILD_INFO = '.build-info'
 const dir =
-  process.env.TASKFLOW_PROD_PLUGIN_DIR ??
+  process.env.DTP_PROD_PLUGIN_DIR ??
   path.join(
     process.env.HOME,
-    'Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian-vault/.obsidian/plugins/taskflow',
+    'Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian-vault/.obsidian/plugins/daily-task-panel',
   )
 
 if (!fs.existsSync(path.join(dir, 'main.js.prev'))) {
@@ -37,5 +37,5 @@ if (fs.existsSync(`${infoPath}.prev`)) {
 }
 console.log(`rolled back to ${label} → ${dir}`)
 console.log(
-  `reload Obsidian to pick it up:\n  obsidian eval code="app.plugins.disablePlugin('taskflow').then(()=>app.plugins.enablePlugin('taskflow'))"`,
+  `reload Obsidian to pick it up:\n  obsidian eval code="app.plugins.disablePlugin('daily-task-panel').then(()=>app.plugins.enablePlugin('daily-task-panel'))"`,
 )

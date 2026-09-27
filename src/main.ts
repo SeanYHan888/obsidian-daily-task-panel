@@ -1,31 +1,26 @@
-import {Notice, Plugin} from 'obsidian'
+import {Notice, Plugin, normalizePath} from 'obsidian'
 
 import {undoEntry} from './adapters/undo'
-import {DEFAULT_SETTINGS, TaskflowSettingTab} from './settings'
-import {TASKFLOW_VIEW_TYPE, TaskflowView} from './view'
+import {DEFAULT_SETTINGS, PanelSettingTab} from './settings'
+import {LEGACY_PLUGIN_ID, isOwnLegacyData, migrateSettings} from './settings-migration'
+import {VIEW_TYPE, PanelView} from './view'
 
 import type {JournalEntry} from './core/journal'
-import type {LegacySettings, TaskflowSettings} from './settings'
+import type {PanelSettings} from './settings'
 
 const JOURNAL_DEPTH = 50
 
-export default class TaskflowPlugin extends Plugin {
-  settings: TaskflowSettings = {...DEFAULT_SETTINGS}
+export default class DailyTaskPanelPlugin extends Plugin {
+  settings: PanelSettings = {...DEFAULT_SETTINGS}
   /** Session undo journal (ADR-0001): a log of edits, in memory only. */
   private journal: JournalEntry[] = []
 
   async onload(): Promise<void> {
-    const loaded = (await this.loadData()) as (Partial<TaskflowSettings> & LegacySettings) | null
-    // Existing installs keep their machine-managed note across the key rename.
-    if (loaded?.appleSyncPath != null && loaded.machineNotePath == null) {
-      loaded.machineNotePath = loaded.appleSyncPath
-    }
-    delete loaded?.appleSyncPath
-    this.settings = {...DEFAULT_SETTINGS, ...loaded}
+    await this.loadSettings()
 
-    this.registerView(TASKFLOW_VIEW_TYPE, leaf => new TaskflowView(leaf, this))
-    this.addSettingTab(new TaskflowSettingTab(this.app, this))
-    this.addRibbonIcon('list-checks', 'Open Taskflow', () => void this.activateView())
+    this.registerView(VIEW_TYPE, leaf => new PanelView(leaf, this))
+    this.addSettingTab(new PanelSettingTab(this.app, this))
+    this.addRibbonIcon('list-checks', 'Open Daily Task Panel', () => void this.activateView())
     this.addCommand({
       id: 'open-panel',
       name: 'Open panel',
@@ -40,6 +35,37 @@ export default class TaskflowPlugin extends Plugin {
     this.app.workspace.onLayoutReady(() => void this.activateView(false))
   }
 
+  /**
+   * Stored settings, migrated to the current shape (settings-migration.ts).
+   * With nothing stored yet, the pre-rename Taskflow folder is read once and
+   * its settings are saved under the new id straight away, so the carry-over
+   * happens exactly once and survives removing the old plugin.
+   */
+  private async loadSettings(): Promise<void> {
+    const stored: unknown = await this.loadData()
+    const legacy = stored == null ? await this.readLegacyData() : null
+    this.settings = {...DEFAULT_SETTINGS, ...migrateSettings(stored ?? legacy)}
+    if (legacy != null) {
+      await this.saveData(this.settings)
+      new Notice(
+        'Daily Task Panel: settings carried over from Taskflow. You can disable and remove the old Taskflow plugin.',
+        12000,
+      )
+    }
+  }
+
+  /** The old plugin folder's data.json, when it exists and is recognisably ours. */
+  private async readLegacyData(): Promise<unknown> {
+    const path = normalizePath(`${this.app.vault.configDir}/plugins/${LEGACY_PLUGIN_ID}/data.json`)
+    try {
+      if (!(await this.app.vault.adapter.exists(path))) return null
+      const raw: unknown = JSON.parse(await this.app.vault.adapter.read(path))
+      return isOwnLegacyData(raw) ? raw : null
+    } catch {
+      return null
+    }
+  }
+
   pushJournal(entry: JournalEntry): void {
     this.journal.push(entry)
     if (this.journal.length > JOURNAL_DEPTH) this.journal.shift()
@@ -49,48 +75,48 @@ export default class TaskflowPlugin extends Plugin {
   async undo(entry?: JournalEntry): Promise<void> {
     const target = entry ?? this.journal[this.journal.length - 1]
     if (!target) {
-      new Notice('Taskflow: nothing to undo')
+      new Notice('Daily Task Panel: nothing to undo')
       return
     }
     const index = this.journal.lastIndexOf(target)
     if (index === -1) {
-      new Notice('Taskflow: that action was already undone')
+      new Notice('Daily Task Panel: that action was already undone')
       return
     }
     this.journal.splice(index, 1)
     const {stale} = await undoEntry(this.app, target)
     new Notice(
       stale > 0
-        ? `Taskflow: undid "${target.label}" — ${stale} line${stale === 1 ? '' : 's'} changed since last refresh — skipped`
-        : `Taskflow: undid "${target.label}"`,
+        ? `Daily Task Panel: undid "${target.label}" — ${stale} line${stale === 1 ? '' : 's'} changed since last refresh — skipped`
+        : `Daily Task Panel: undid "${target.label}"`,
     )
     this.refreshViews()
   }
 
   refreshViews(): void {
-    for (const leaf of this.app.workspace.getLeavesOfType(TASKFLOW_VIEW_TYPE)) {
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
       const view = leaf.view
-      if (view instanceof TaskflowView) view.refresh()
+      if (view instanceof PanelView) view.refresh()
     }
   }
 
-  async updateSettings(updates: Partial<TaskflowSettings>): Promise<void> {
+  async updateSettings(updates: Partial<PanelSettings>): Promise<void> {
     this.settings = {...this.settings, ...updates}
     await this.saveData(this.settings)
     this.refreshViews()
   }
 
   private async activateView(reveal = true): Promise<void> {
-    const existing = this.app.workspace.getLeavesOfType(TASKFLOW_VIEW_TYPE)[0]
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0]
     if (existing) {
       if (reveal) await this.app.workspace.revealLeaf(existing)
       return
     }
     const leaf = this.app.workspace.getRightLeaf(false)
     if (!leaf) return
-    await leaf.setViewState({type: TASKFLOW_VIEW_TYPE, active: reveal})
+    await leaf.setViewState({type: VIEW_TYPE, active: reveal})
     if (reveal) {
-      const created = this.app.workspace.getLeavesOfType(TASKFLOW_VIEW_TYPE)[0]
+      const created = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0]
       if (created) await this.app.workspace.revealLeaf(created)
     }
   }

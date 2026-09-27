@@ -2,7 +2,7 @@ import type {SectionKey} from '../settings'
 import type {DropTarget} from '../core/drop'
 import type {QuickDate} from '../core/schedule'
 import type {SetupMessageKey} from '../core/setup'
-import type {PacingMode, ProjectMeta, Sections, TaskflowTask} from '../core/types'
+import type {PacingMode, ProjectMeta, Sections, Task} from '../core/types'
 
 export type PanelData = {
   sections: Sections | null
@@ -41,41 +41,37 @@ export type RowContext = {
   machineNotePath: string
   /** Desktop drag: rows lift, headers catch. The drag state lives in the panel. */
   draggable: boolean
-  onDragStart: (task: TaskflowTask) => void
+  onDragStart: (task: Task) => void
   onDragEnd: () => void
   callbacks: PanelCallbacks
 }
 
 export type PanelCallbacks = {
-  onToggleTask: (task: TaskflowTask) => void
+  onToggleTask: (task: Task) => void
   /** The MouseEvent carries the open modifiers (mod+click → new tab, etc.). */
-  onOpenTask: (task: TaskflowTask, ev?: MouseEvent) => void
+  onOpenTask: (task: Task, ev?: MouseEvent) => void
   onOpenFile: (path: string, ev?: MouseEvent) => void
   onCollapse: (key: SectionKey, collapsed: boolean) => void
-  onCollapseProject: (path: string, collapsed: boolean) => void
   /** Header click: fold, or jump to the note when the open-modifier is held. */
   onProjectToggle: (path: string, folded: boolean, ev: MouseEvent) => void
   /** Opens the quick-date menu (today / tomorrow / weekend / pick) at the event. */
-  onScheduleMenu: (task: TaskflowTask, ev: MouseEvent) => void
+  onScheduleMenu: (task: Task, ev: MouseEvent) => void
   /** The 📅 chip's menu (#18): pick or remove the due date — never the plan. */
-  onDueMenu: (task: TaskflowTask, ev: MouseEvent) => void
+  onDueMenu: (task: Task, ev: MouseEvent) => void
   /** The row's context menu: every hover affordance, for right-click and touch. */
-  onRowMenu: (task: TaskflowTask, ev: MouseEvent, row: RowMenuState) => void
-  onSchedule: (task: TaskflowTask, kind: QuickDate) => void
-  /** Removes the ⏳ plan — puts a To-do task back to wherever it lives. */
-  onUnschedule: (task: TaskflowTask) => void
-  onPickDate: (task: TaskflowTask) => void
-  onCancelTask: (task: TaskflowTask) => void
-  onRescheduleAllSlipped: () => void
+  onRowMenu: (task: Task, ev: MouseEvent, row: RowMenuState) => void
+  onSchedule: (task: Task, kind: QuickDate) => void
+  onPickDate: (task: Task) => void
+  onCancelTask: (task: Task) => void
   /** A section header's "…" menu; `selecting` labels the toggle-select item. */
   onSectionMenu: (key: SectionKey, selecting: boolean, ev: MouseEvent) => void
   /** Triage: open the project picker for the selected inbox tasks. */
-  onBulkMove: (tasks: TaskflowTask[]) => void
-  onBulkScheduleMenu: (tasks: TaskflowTask[], ev: MouseEvent) => void
+  onBulkMove: (tasks: Task[]) => void
+  onBulkScheduleMenu: (tasks: Task[], ev: MouseEvent) => void
   /** Narrow panels: the select bar's two buttons folded into one "…" menu. */
-  onBulkActionsMenu: (tasks: TaskflowTask[], ev: MouseEvent) => void
+  onBulkActionsMenu: (tasks: Task[], ev: MouseEvent) => void
   /** A drop names an existing edit; core resolves which one (dropIntent). */
-  onDrop: (task: TaskflowTask, target: DropTarget, ev: DragEvent) => void
+  onDrop: (task: Task, target: DropTarget, ev: DragEvent) => void
   /** A project header dropped on another (#21): take its slot (core/order placeWrites). */
   onReorderProject: (path: string, targetPath: string) => void
   /** Project lifecycle menu: status now/next/later, done/dropped + archive. */

@@ -1,5 +1,5 @@
 {
-  "name": "taskflow",
+  "name": "daily-task-panel",
   "version": "0.5.8",
   "description": "Obsidian sidebar panel: daily-note capture to project execution over the Tasks plugin.",
   "main": "main.js",
@@ -31,7 +31,6 @@
     "eslint": "^9.39.5",
     "eslint-plugin-obsidianmd": "^0.4.1",
     "obsidian": "^1.13.1",
-    "prettier": "^3.0.3",
     "svelte": "^5.56.10",
     "tslib": "^2.8.1",
     "typescript": "^5.9.0",
@@ -40,6 +39,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/SeanYHan888/obsidian-taskflow.git"
+    "url": "https://github.com/SeanYHan888/obsidian-daily-task-panel.git"
   }
 }

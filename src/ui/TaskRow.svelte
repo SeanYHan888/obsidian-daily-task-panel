@@ -6,7 +6,7 @@
   import {rowAffordances} from '../core/machine-note'
   import {chipLabel, rowChip} from '../core/schedule'
 
-  import type {TaskflowTask} from '../core/types'
+  import type {Task} from '../core/types'
   import type {RowContext} from './panel-types'
 
   let {
@@ -19,13 +19,13 @@
     onToggleSelect = null,
     nested = false,
   }: {
-    task: TaskflowTask
+    task: Task
     ctx: RowContext
     showSource?: boolean
     slippedActions?: boolean
     selectMode?: boolean
     selectedKeys?: ReadonlySet<string> | null
-    onToggleSelect?: ((task: TaskflowTask) => void) | null
+    onToggleSelect?: ((task: Task) => void) | null
     nested?: boolean
   } = $props()
 
@@ -51,10 +51,10 @@
   const chip = $derived(rowChip(task, ctx.today))
 </script>
 
-<div class="taskflow-item" class:taskflow-item-nested={nested}>
+<div class="dtp-item" class:dtp-item-nested={nested}>
 <div
-  class="taskflow-row"
-  class:taskflow-row-selected={selected}
+  class="dtp-row"
+  class:dtp-row-selected={selected}
   draggable={rowDraggable}
   role="listitem"
   ondragstart={ev => {
@@ -70,31 +70,31 @@
 >
   {#if selectable && onToggleSelect}
     <button
-      class="taskflow-select-box"
-      class:taskflow-selected={selected}
+      class="dtp-select-box"
+      class:dtp-selected={selected}
       role="checkbox"
       aria-checked={selected}
       aria-label="Select task"
       onclick={() => onToggleSelect(task)}
-    >{#if selected}<span class="taskflow-select-mark" aria-hidden="true" use:icon={'check'}></span>{/if}</button>
+    >{#if selected}<span class="dtp-select-mark" aria-hidden="true" use:icon={'check'}></span>{/if}</button>
   {:else}
     <button
-      class="taskflow-check"
+      class="dtp-check"
       aria-label="Complete task"
       onclick={() => ctx.callbacks.onToggleTask(task)}
     ></button>
   {/if}
   <button
-    class="taskflow-text"
+    class="dtp-text"
     onclick={ev =>
       selectable && onToggleSelect ? onToggleSelect(task) : ctx.callbacks.onOpenTask(task, ev)}
     onauxclick={ev => {
       if (ev.button === 1 && !(selectable && onToggleSelect)) ctx.callbacks.onOpenTask(task, ev)
     }}
   >
-    <span class="taskflow-desc">{task.description}</span>
+    <span class="dtp-desc">{task.description}</span>
     {#if showSource}
-      <span class="taskflow-source">{sourceLabel}</span>
+      <span class="dtp-source">{sourceLabel}</span>
     {/if}
   </button>
   <!-- One chip, the date that matters next (chip rule): the start while it
@@ -104,9 +104,9 @@
   {#if chip}
     {#if canSchedule}
       <button
-        class="taskflow-chip taskflow-chip-button"
-        class:taskflow-chip-due={chip.field === 'due'}
-        class:taskflow-chip-past={chip.past}
+        class="dtp-chip dtp-chip-button"
+        class:dtp-chip-due={chip.field === 'due'}
+        class:dtp-chip-past={chip.past}
         aria-label={chip.field === 'due' ? 'Edit due date' : 'Edit start'}
         onclick={ev =>
           chip.field === 'due'
@@ -117,9 +117,9 @@
       </button>
     {:else}
       <span
-        class="taskflow-chip"
-        class:taskflow-chip-due={chip.field === 'due'}
-        class:taskflow-chip-past={chip.past}
+        class="dtp-chip"
+        class:dtp-chip-due={chip.field === 'due'}
+        class:dtp-chip-past={chip.past}
       >
         {chipText(chip.date)}
       </span>
@@ -127,7 +127,7 @@
   {:else if canSchedule}
     <!-- A press that wanders must stay a click, never lift the row. -->
     <button
-      class="taskflow-add-date"
+      class="dtp-add-date"
       aria-label="Set start"
       onclick={ev => ctx.callbacks.onScheduleMenu(task, ev)}
       ondragstart={ev => {
@@ -139,21 +139,21 @@
   {/if}
 </div>
 {#if slippedActions && canSchedule}
-  <div class="taskflow-actions">
-    <button class="taskflow-action" onclick={() => ctx.callbacks.onSchedule(task, 'today')}>
+  <div class="dtp-actions">
+    <button class="dtp-action" onclick={() => ctx.callbacks.onSchedule(task, 'today')}>
       today
     </button>
-    <button class="taskflow-action" onclick={() => ctx.callbacks.onSchedule(task, 'tomorrow')}>
+    <button class="dtp-action" onclick={() => ctx.callbacks.onSchedule(task, 'tomorrow')}>
       tomorrow
     </button>
     <button
-      class="taskflow-action"
+      class="dtp-action"
       aria-label="Pick a date"
       onclick={() => ctx.callbacks.onPickDate(task)}
       use:icon={'calendar'}
     ></button>
     <button
-      class="taskflow-action taskflow-action-danger"
+      class="dtp-action dtp-action-danger"
       aria-label="Cancel task"
       onclick={() => ctx.callbacks.onCancelTask(task)}
       use:icon={'x'}
@@ -161,7 +161,7 @@
   </div>
 {/if}
 {#if task.children.length > 0}
-  <div class="taskflow-children">
+  <div class="dtp-children">
     {#each task.children as child (locationKey(child.filePath, child.line))}
       <TaskRow
         task={child}

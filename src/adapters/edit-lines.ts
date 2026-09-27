@@ -1,5 +1,6 @@
 import {Notice, TFile} from 'obsidian'
 
+import {editLine, sameLine} from './lines'
 import {toJournalEntry} from '../core/journal'
 import {dateEditLabel, rescheduleLabel} from '../core/labels'
 import {
@@ -13,7 +14,7 @@ import {
 
 import type {App} from 'obsidian'
 import type {JournalEntry, LineRecord} from '../core/journal'
-import type {TaskflowTask} from '../core/types'
+import type {Task} from '../core/types'
 
 /**
  * Applies per-line transforms to tasks, one vault.process per file. Every line
@@ -23,10 +24,10 @@ import type {TaskflowTask} from '../core/types'
  */
 const editTaskLines = async (
   app: App,
-  tasks: TaskflowTask[],
+  tasks: Task[],
   transform: (line: string) => string,
 ): Promise<LineRecord[]> => {
-  const byFile = new Map<string, TaskflowTask[]>()
+  const byFile = new Map<string, Task[]>()
   for (const task of tasks) {
     byFile.set(task.filePath, [...(byFile.get(task.filePath) ?? []), task])
   }
@@ -42,33 +43,28 @@ const editTaskLines = async (
     await app.vault.process(file, data => {
       const lines = data.split('\n')
       for (const task of fileTasks) {
-        if (lines[task.line] !== task.sourceLine) {
+        const line = lines[task.line]
+        if (!sameLine(line, task.sourceLine)) {
           stale++
           continue
         }
-        const after = transform(task.sourceLine)
-        if (after === task.sourceLine) continue
+        const after = editLine(line, transform)
+        if (after === line) continue
         lines[task.line] = after
-        records.push({
-          kind: 'replace',
-          file: path,
-          line: task.line,
-          before: task.sourceLine,
-          after,
-        })
+        records.push({kind: 'replace', file: path, line: task.line, before: line, after})
       }
       return lines.join('\n')
     })
   }
   if (stale > 0) {
-    new Notice(`Taskflow: ${stale} task${stale === 1 ? '' : 's'} moved since last refresh — skipped`)
+    new Notice(`Daily Task Panel: ${stale} task${stale === 1 ? '' : 's'} moved since last refresh — skipped`)
   }
   return records
 }
 
 export const rescheduleTasks = async (
   app: App,
-  tasks: TaskflowTask[],
+  tasks: Task[],
   date: string,
   today: string,
 ): Promise<JournalEntry | null> => {
@@ -76,14 +72,14 @@ export const rescheduleTasks = async (
   return toJournalEntry(rescheduleLabel(records, date), records)
 }
 
-export const cancelTask = async (app: App, task: TaskflowTask): Promise<JournalEntry | null> => {
+export const cancelTask = async (app: App, task: Task): Promise<JournalEntry | null> => {
   const records = await editTaskLines(app, [task], cancelLine)
   return toJournalEntry('cancelled 1 task', records)
 }
 
 export const unscheduleTasks = async (
   app: App,
-  tasks: TaskflowTask[],
+  tasks: Task[],
 ): Promise<JournalEntry | null> => {
   const records = await editTaskLines(app, tasks, clearScheduled)
   return toJournalEntry(dateEditLabel('start', records.length, null), records)
@@ -91,7 +87,7 @@ export const unscheduleTasks = async (
 
 export const setDueTasks = async (
   app: App,
-  tasks: TaskflowTask[],
+  tasks: Task[],
   date: string,
 ): Promise<JournalEntry | null> => {
   const records = await editTaskLines(app, tasks, line => setDue(line, date))
@@ -100,7 +96,7 @@ export const setDueTasks = async (
 
 export const clearDueTasks = async (
   app: App,
-  tasks: TaskflowTask[],
+  tasks: Task[],
 ): Promise<JournalEntry | null> => {
   const records = await editTaskLines(app, tasks, clearDue)
   return toJournalEntry(dateEditLabel('due', records.length, null), records)
@@ -112,7 +108,7 @@ export const clearDueTasks = async (
  */
 export const editTaskText = async (
   app: App,
-  task: TaskflowTask,
+  task: Task,
   words: string,
 ): Promise<JournalEntry | null> => {
   const records = await editTaskLines(app, [task], line => withTaskWords(line, words))

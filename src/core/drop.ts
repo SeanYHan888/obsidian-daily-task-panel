@@ -13,8 +13,6 @@ export type DropTarget =
 
 export type DropIntent =
   | {kind: 'schedule-today'}
-  | {kind: 'remove-date'}
-  | {kind: 'send-back-to-inbox'}
   | {kind: 'move-to-project'; path: string}
   /** Upcoming needs a date chosen, never guessed — open the quick-date menu. */
   | {kind: 'ask-date'}
@@ -61,6 +59,6 @@ export const dropIntent = (
   }
   if (target.key === 'upcoming') return {kind: 'ask-date'}
   // Capture renders inside To-do (2026-08-22 merge), so the Inbox key has no
-  // header to drop on; remove-date and send-back-to-inbox live in the menu.
+  // header to drop on; clearing a date and sending back live in the menu.
   return {kind: 'none'}
 }

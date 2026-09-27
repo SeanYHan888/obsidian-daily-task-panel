@@ -26,8 +26,8 @@ export const projectDateNotice = (
 ): string => {
   const base =
     edit.date == null
-      ? `Taskflow: ${project.name} ${edit.field} cleared`
-      : `Taskflow: ${project.name} ${edit.field} → ${edit.date}`
+      ? `Daily Task Panel: ${project.name} ${edit.field} cleared`
+      : `Daily Task Panel: ${project.name} ${edit.field} → ${edit.date}`
   const start = edit.field === 'start' ? edit.date : project.start
   const deadline = edit.field === 'deadline' ? edit.date : project.deadline
   if (edit.date == null || start == null || deadline == null || start <= deadline) return base
