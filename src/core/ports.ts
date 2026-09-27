@@ -1,4 +1,5 @@
 import type {JournalEntry} from './journal'
+import type {VaultLayout} from './layout'
 import type {ProjectMeta, ProjectStatus, Task} from './types'
 
 /**
@@ -57,6 +58,7 @@ export type LineEditor = {
   /** Swaps the task's words; checkbox, dates and block reference stay. */
   editText(task: Task, text: string): Promise<JournalEntry | null>
   moveToProject(tasks: Task[], projectPath: string): Promise<MoveOutcome>
+  /** Into today's daily note under the inbox heading — the layout says which note. */
   sendBackToInbox(tasks: Task[], today: string): Promise<MoveOutcome>
   /** Appends one new task line under the project's move-target heading. */
   addTask(projectPath: string, text: string): Promise<JournalEntry | null>
@@ -66,4 +68,6 @@ export type Ports = {
   tasks: TaskSource
   projects: ProjectStore
   editor: LineEditor
+  /** Where things live, as of now (core/layout.ts) — the one rule every port and projection shares. */
+  layout(): VaultLayout
 }

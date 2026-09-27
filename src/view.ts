@@ -3,11 +3,12 @@ import {mount, unmount} from 'svelte'
 
 import Panel from './ui/Panel.svelte'
 import {askDate, askText, confirm, pickProject} from './ui/prompts'
-import {createPorts, effectiveDailyNotesFolder, gatherSetupFacts} from './adapters/compose'
+import {createPorts, gatherSetupFacts} from './adapters/compose'
 import {classifySections} from './core/classify'
 import {setupState} from './core/setup'
 import {dropIntent} from './core/drop'
 import {flattenTaskTree} from './core/hierarchy'
+import {EMPTY_LAYOUT} from './core/layout'
 import {projectDateNotice} from './core/labels'
 import {editableTasks} from './core/machine-note'
 import {
@@ -25,6 +26,7 @@ import {carryFoldToggle, foldToggles, promotionOutcome, retirePlan} from './core
 import type {WorkspaceLeaf} from 'obsidian'
 import type {DropTarget} from './core/drop'
 import type {JournalEntry} from './core/journal'
+import type {VaultLayout} from './core/layout'
 import type {ProjectDateEdit} from './core/labels'
 import type {MenuAction, MenuItemSpec} from './core/menus'
 import type {MoveDirection} from './core/order'
@@ -66,6 +68,8 @@ export class PanelView extends ItemView {
   private panel: PanelHandle | null = null
   private lastToday = localToday()
   private lastSections: Sections | null = null
+  /** The layout the last projection was built on — drops resolve against it, not a fresh read. */
+  private lastLayout: VaultLayout = EMPTY_LAYOUT
   private portsCache: Ports | null = null
 
   constructor(
@@ -169,7 +173,8 @@ export class PanelView extends ItemView {
     this.lastToday = today
 
     const setup = setupState(gatherSetupFacts(this.app, settings))
-    const dailyNotesFolder = effectiveDailyNotesFolder(this.app, settings)
+    const layout = this.ports.layout()
+    this.lastLayout = layout
     const base = {
       today,
       setup,
@@ -177,11 +182,7 @@ export class PanelView extends ItemView {
       collapsed: settings.collapsed,
       collapsedProjects: settings.collapsedProjects,
       draggable: Platform.isDesktop,
-      machineNotePath: settings.machineNotePath,
-      projectsFolder: settings.projectsFolder,
-      dailyNotesFolder,
-      inboxHeading: settings.inboxHeading,
-      templatePath: settings.projectTemplatePath,
+      layout,
       pacingMode: settings.pacingMode,
     }
 
@@ -192,11 +193,8 @@ export class PanelView extends ItemView {
     }
 
     const sections = classifySections(this.ports.tasks.read(), this.ports.projects.read(), {
+      ...layout,
       today,
-      dailyNotesFolder,
-      projectsFolder: settings.projectsFolder,
-      machineNotePath: settings.machineNotePath,
-      inboxHeading: settings.inboxHeading,
       pacingMode: settings.pacingMode,
       pressWindow: settings.pressWindow,
     })
@@ -242,12 +240,9 @@ export class PanelView extends ItemView {
       void this.openFile(tasks[0].filePath, tasks[0].line, ev)
   }
 
-  /** The menu builders' slice of the world: settings plus the injected clock. */
+  /** The menu builders' slice of the world: the layout plus the injected clock. */
   private menuConfig() {
-    return {
-      ...this.plugin.settings,
-      today: localToday(),
-    }
+    return {...this.lastLayout, today: localToday()}
   }
 
   private showScheduleMenu(tasks: Task[], ev: MouseEvent): void {
@@ -354,16 +349,9 @@ export class PanelView extends ItemView {
    * intent in core and dispatch to the same methods the buttons use.
    */
   private handleDrop(task: Task, target: DropTarget, ev: DragEvent): void {
-    const settings = this.plugin.settings
-    // The same clock snapshot the panel highlighted targets with — validity
-    // and execution must agree, even across midnight.
-    const intent = dropIntent(task, target, {
-      machineNotePath: settings.machineNotePath,
-      projectsFolder: settings.projectsFolder,
-      dailyNotesFolder: effectiveDailyNotesFolder(this.app, settings),
-      inboxHeading: settings.inboxHeading,
-      today: this.lastToday,
-    })
+    // The same layout and clock snapshot the panel highlighted targets with —
+    // validity and execution must agree, even across midnight.
+    const intent = dropIntent(task, target, {...this.lastLayout, today: this.lastToday})
     if (intent.kind === 'schedule-today') void this.reschedule([task], localToday())
     else if (intent.kind === 'move-to-project') void this.moveTo([task], intent.path)
     else if (intent.kind === 'ask-date') this.showScheduleMenu([task], ev)
@@ -527,7 +515,7 @@ export class PanelView extends ItemView {
     const archived = await this.ports.projects.archive(project.path, status)
     if (archived) {
       new Notice(
-        `Daily Task Panel: ${project.name} marked ${status} — archived to ${this.plugin.settings.archiveFolder}`,
+        `Daily Task Panel: ${project.name} marked ${status} — archived to ${this.lastLayout.archiveFolder}`,
       )
     }
     this.refresh()
@@ -579,8 +567,7 @@ export class PanelView extends ItemView {
   }
 
   private async bulkMove(allTasks: Task[]): Promise<void> {
-    const settings = this.plugin.settings
-    const tasks = editableTasks(allTasks, settings)
+    const tasks = editableTasks(allTasks, this.lastLayout)
     if (tasks.length === 0) return
     const choice = await pickProject(this.app, this.ports.projects.read())
     if (!choice) return
@@ -615,7 +602,7 @@ export class PanelView extends ItemView {
   // so anything that changed since the last refresh is skipped, not guessed at.
   private async rescheduleAllSlipped(): Promise<void> {
     if (!this.lastSections) return
-    const slipped = editableTasks(flattenTaskTree(this.lastSections.slipped), this.plugin.settings)
+    const slipped = editableTasks(flattenTaskTree(this.lastSections.slipped), this.lastLayout)
     if (slipped.length === 0) return
     await this.reschedule(slipped, localToday())
   }

@@ -1,5 +1,6 @@
-import {Notice, TFile, moment} from 'obsidian'
+import {Notice, TFile} from 'obsidian'
 
+import {todayDailyNotePath} from './layout'
 import {carriageReturn, sameLine, withEnding} from './lines'
 import {relationsFromLines} from '../core/hierarchy'
 import {toJournalEntry} from '../core/journal'
@@ -8,6 +9,7 @@ import {cutTaskBlocks, headingLine, insertUnderHeadingAt, newTaskBlock} from '..
 
 import type {App} from 'obsidian'
 import type {JournalEntry, LineRecord} from '../core/journal'
+import type {VaultLayout} from '../core/layout'
 import type {MoveOutcome} from '../core/ports'
 import type {Task} from '../core/types'
 
@@ -185,39 +187,6 @@ export const addTaskToProject = async (
 }
 
 /**
- * The Daily Notes core plugin's configuration — the single source of truth
- * for where daily notes live (#6): classification filters by the same folder
- * send-back writes to, so the two halves of triage can never disagree. Null
- * when the plugin is off. The one walk into Obsidian's private internals
- * lives here.
- */
-export const dailyNotesConfig = (app: App): {folder: string; format: string} | null => {
-  const internal = (
-    app as unknown as {
-      internalPlugins?: {
-        getPluginById?: (id: string) => {
-          enabled?: boolean
-          instance?: {options?: {folder?: string; format?: string}}
-        } | null
-      }
-    }
-  ).internalPlugins?.getPluginById?.('daily-notes')
-  if (!internal || internal.enabled === false || !internal.instance) return null
-  const options = internal.instance.options ?? {}
-  return {
-    folder: (options.folder ?? '').replace(/\/$/, ''),
-    format: options.format || 'YYYY-MM-DD',
-  }
-}
-
-/** Today's daily note path, resolved the way the Daily Notes plugin does (the format may contain subfolders). */
-const todayDailyNotePath = (app: App, today: string): string => {
-  const config = dailyNotesConfig(app) ?? {folder: '', format: 'YYYY-MM-DD'}
-  const name = moment(today).format(config.format)
-  return `${config.folder ? config.folder + '/' : ''}${name}.md`
-}
-
-/**
  * The inverse of moveTasksToProject: backlog tasks return to today's daily
  * note under the inbox heading — back into triage. Refuses when today's note
  * or its inbox heading is missing: the panel edits task lines only, it never
@@ -226,10 +195,11 @@ const todayDailyNotePath = (app: App, today: string): string => {
 export const sendTasksBackToInbox = async (
   app: App,
   tasks: Task[],
-  inboxHeading: string,
+  layout: VaultLayout,
   today: string,
 ): Promise<MoveOutcome> => {
-  const dailyPath = todayDailyNotePath(app, today)
+  const inboxHeading = layout.inboxHeading
+  const dailyPath = todayDailyNotePath(layout, today)
   const dailyFile = app.vault.getAbstractFileByPath(dailyPath)
   if (!(dailyFile instanceof TFile)) {
     new Notice(`Daily Task Panel: today's daily note not found (${dailyPath}) — create it first`)

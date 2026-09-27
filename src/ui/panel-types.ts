@@ -1,5 +1,6 @@
 import type {SectionKey} from '../settings'
 import type {DropTarget} from '../core/drop'
+import type {VaultLayout} from '../core/layout'
 import type {QuickDate} from '../core/schedule'
 import type {SetupMessageKey} from '../core/setup'
 import type {PacingMode, ProjectMeta, Sections, Task} from '../core/types'
@@ -15,15 +16,8 @@ export type PanelData = {
   collapsedProjects: Record<string, boolean>
   /** Rows can be dragged to section and project headers (desktop only). */
   draggable: boolean
-  /** Machine-managed rows get check-off only (core/machine-note.ts, ADR-0003). */
-  machineNotePath: string
-  /** Membership is location (CONTEXT.md); drop validity needs it too. */
-  projectsFolder: string
-  /** Inbox captures render inside To-do; drop validity must know them. */
-  dailyNotesFolder: string
-  inboxHeading: string
-  /** For the template-missing hint; '' means the built-in scaffold. */
-  templatePath: string
+  /** Where things live, as of this projection (core/layout.ts): drop validity, the read-only guard, the empty-state copy. */
+  layout: VaultLayout
   /** Which pacing signals to render: wip hides chips, deadline hides the badge. */
   pacingMode: PacingMode
 }

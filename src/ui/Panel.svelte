@@ -4,6 +4,7 @@
   import {stillInside} from './dnd'
   import {icon} from './icon'
   import {dropIntent} from '../core/drop'
+  import {EMPTY_LAYOUT} from '../core/layout'
   import {canPlace, movableProjects as movableBand} from '../core/order'
   import {countTaskTree, locationKey} from '../core/hierarchy'
   import {chipLabel} from '../core/schedule'
@@ -25,11 +26,7 @@
     collapsed: {},
     collapsedProjects: {},
     draggable: false,
-    machineNotePath: '',
-    projectsFolder: '',
-    dailyNotesFolder: '',
-    inboxHeading: '',
-    templatePath: '',
+    layout: EMPTY_LAYOUT,
     pacingMode: 'hybrid',
   })
 
@@ -51,13 +48,7 @@
   // Story 16: only targets whose drop would actually do something light up.
   const dropValid = (target: DropTarget): boolean =>
     dragTask != null &&
-    dropIntent(dragTask, target, {
-      machineNotePath: data.machineNotePath,
-      projectsFolder: data.projectsFolder,
-      dailyNotesFolder: data.dailyNotesFolder,
-      inboxHeading: data.inboxHeading,
-      today: data.today,
-    }).kind !== 'none'
+    dropIntent(dragTask, target, {...data.layout, today: data.today}).kind !== 'none'
 
   // Drag-to-reorder (#21): the movable band is core's one definition (#22) —
   // the Backlogs as displayed minus arrived deadlines and unstarted projects.
@@ -119,7 +110,7 @@
 
   const ctx: RowContext = $derived({
     today: data.today,
-    machineNotePath: data.machineNotePath,
+    machineNotePath: data.layout.machineNotePath,
     draggable: data.draggable,
     onDragStart: (task: Task) => (dragTask = task),
     onDragEnd: () => {
@@ -140,7 +131,7 @@
   )
   const projectsEmpty = $derived(
     data.setup.includes('projects-folder-missing')
-      ? `Projects are notes in "${data.projectsFolder}" with a status field (now, next, or later). Create the folder when you're ready — everything above works without it.`
+      ? `Projects are notes in "${data.layout.projectsFolder}" with a status field (now, next, or later). Create the folder when you're ready — everything above works without it.`
       : 'No open project tasks',
   )
 </script>
@@ -422,7 +413,7 @@
 
     {#if data.setup.includes('template-missing')}
       <div class="dtp-setup-hint">
-        Project template not found at "{data.templatePath}" — "New project"
+        Project template not found at "{data.layout.projectTemplatePath}" — "New project"
         will use the built-in scaffold.
       </div>
     {/if}

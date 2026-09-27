@@ -119,6 +119,10 @@ Primary click does the surface's dominant act — task text jumps, project name 
 **Daily note**:
 A note under `Daily Notes/` (pattern `YYYY/MM/MM-DD, ddd`). Where tasks are captured.
 
+**Vault layout**:
+Where things live, as one value (`core/layout.ts`): the daily-notes folder and name format, the projects and archive folders, the machine-managed note, the inbox and move-target headings, the project template. Resolved once per projection from settings plus the Daily Notes plugin's say (its folder and format win while it is on; the settings folder is the fallback, for reading the inbox and writing send-back alike — 2026-09-27, before which the two halves of triage fell back differently). Every projection, drop, menu and line edit reads the same value; nothing re-derives a folder from settings on its own.
+_Avoid_: config, paths (as the concept's name)
+
 **Machine-managed note**:
 The one configured note some external tool rewrites on its own schedule (optional; blank means the vault has none). Two rules follow from "machine-rewritten," both stated once in `core/machine-note.ts`: its ⏳-dated lines are calendar blocks and are never projected, and its rows are read-only in the panel except check-off. Any sync tool that owns a note fits.
 _Avoid_: Apple Sync path (as the concept's name — Apple Sync is one instance)
