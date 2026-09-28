@@ -9,6 +9,10 @@ on:
 
 permissions:
   contents: write
+  # Artifact attestations: signed provenance proving the release assets
+  # were built from this repository by this workflow.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -31,6 +35,13 @@ jobs:
             echo "tag $tag does not match manifest version $version" >&2
             exit 1
           fi
+      - name: Attest the release assets
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
       - name: Create the release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

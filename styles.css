@@ -662,13 +662,15 @@
   --icon-size: 11px;
 }
 
-/* Obsidian removes its transitions under reduced motion; so does the panel */
+/* Obsidian removes its transitions under reduced motion; so does the panel.
+   The never-matching :not(#…) lends id specificity, so this outranks every
+   class-based rule in the panel without !important. */
 @media (prefers-reduced-motion: reduce) {
-  .dtp-panel *,
-  .dtp-panel *::before,
-  .dtp-panel *::after {
-    transition: none !important;
-    animation: none !important;
+  .dtp-panel *:not(#dtp-reduced-motion),
+  .dtp-panel *:not(#dtp-reduced-motion)::before,
+  .dtp-panel *:not(#dtp-reduced-motion)::after {
+    transition: none;
+    animation: none;
   }
 }
 

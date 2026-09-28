@@ -2,7 +2,7 @@ import esbuild from 'esbuild'
 import process from 'process'
 import fs from 'fs'
 import path from 'path'
-import builtins from 'builtin-modules'
+import {builtinModules} from 'node:module'
 import sveltePlugin from 'esbuild-svelte'
 
 const banner = `/*
@@ -25,7 +25,7 @@ const options = {
   },
   entryPoints: ['src/main.ts'],
   bundle: true,
-  external: ['obsidian', ...builtins],
+  external: ['obsidian', ...builtinModules, ...builtinModules.map((m) => `node:${m}`)],
   format: 'cjs',
   target: 'es2022',
   logLevel: 'info',

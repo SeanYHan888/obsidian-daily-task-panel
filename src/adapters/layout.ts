@@ -33,4 +33,9 @@ export const resolveLayout = (app: App, settings: PanelSettings): VaultLayout =>
 
 /** Today's daily note path, resolved the way the Daily Notes plugin does. */
 export const todayDailyNotePath = (layout: VaultLayout, today: string): string =>
-  dailyNotePath(layout, moment(today).format(layout.dailyNoteFormat))
+  dailyNotePath(layout, formatDate(today, layout.dailyNoteFormat))
+
+// Obsidian's `moment` export can type as `any` where its moment typings
+// don't resolve (the directory's scanner); pin the one call used here.
+const parseDate = moment as unknown as (date: string) => {format: (fmt: string) => string}
+const formatDate = (date: string, fmt: string): string => parseDate(date).format(fmt)
