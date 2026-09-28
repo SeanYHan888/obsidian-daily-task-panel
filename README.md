@@ -1,6 +1,8 @@
 # Daily Task Panel
 
-An Obsidian sidebar panel that turns daily-note capture into project execution. Your markdown is the database; the panel is a projection of it — Daily Task Panel keeps no task store of its own, mints no IDs, and edits a task line only when you act on it. Every action is a plain text edit you could have made yourself, and every panel action has an undo.
+A daily-notes task manager for Obsidian. Jot tasks in today's daily note as they come up; the panel gathers them into one sidebar list — what's on today, what slipped, what's coming, and each project's backlog — with one-tap ways to schedule, file into a project, and finish them.
+
+Your markdown is the database; the panel is a projection of it. Daily Task Panel keeps no task store of its own, mints no IDs, and edits a task line only when you act on it. Every action is a plain text edit you could have made yourself, and every panel action has an undo.
 
 <img src="images/panel-todo.png" alt="The Daily Task Panel: To-do with today's tasks and inbox captures, the Overdue & slipped repair queue, and the start of the project backlogs" width="420">
 
@@ -14,6 +16,86 @@ Other ways in:
 - **Manual**: download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/SeanYHan888/obsidian-daily-task-panel/releases), put them in `<your vault>/.obsidian/plugins/daily-task-panel/`, reload Obsidian, and enable Daily Task Panel in *Settings → Community plugins*.
 
 **Requirements:** Obsidian 1.7.2+ and the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin in its default emoji format. Daily Task Panel reads tasks through Tasks and completes them through its API, so done-dates, recurrence, and any downstream sync keep working. Without it, the panel tells you what's missing instead of rendering. Works on desktop and mobile.
+
+## Set up with an AI agent
+
+If you use an agent that can read and write files in your vault (Claude Code, Codex, Cursor, Gemini CLI, and the like), open it in your vault's folder and paste the prompt below. It looks before it changes anything, asks before each step, and never rewrites notes you already have. The layout it proposes is the one the plugin was built in: daily notes in dated subfolders with a capture heading, projects as notes with a status. If your vault already has its own layout, the agent keeps it and fills the settings in to match.
+
+```text
+Set up the Daily Task Panel plugin in this Obsidian vault as a daily-notes task manager. Work from the vault root (the folder that contains .obsidian/). First inspect, then show me a short plan; the plan is not my approval. Ask before each step. Never delete, move, or rewrite my existing notes or tasks. The only edit allowed to an existing file is adding a missing capture heading to my daily-note template, with my OK.
+
+RULES (the system; step 7 saves these for future sessions)
+- Every task is one Markdown checkbox line in the Tasks plugin's emoji format.
+  ⏳ YYYY-MM-DD = start: the day I plan to work on it.
+  📅 YYYY-MM-DD = due: a real external deadline. Rare.
+  Never write dataview-style fields such as [scheduled:: ] or [due:: ].
+- Capture: new tasks go, undated, directly under the capture heading of today's daily note (the nearest heading above the task must be the capture heading; any heading level works). When I ask you to add a task, add it there, undated, unless I give a date. The panel shows captures in To-do for triage: give each a start date, move it into a project, or cancel it ([-]).
+- Projects: a project is a note in the projects folder with frontmatter status: now | next | later, and optional start and deadline (ISO dates). A task belongs to a project because its line sits under that note's tasks heading. No project tags on task lines.
+- The panel shows a task only if it has a date, sits under a daily note's capture heading, or lives in a project note. Anything else is invisible to it.
+- Moving a task means cutting its line together with its indented subtasks and pasting them under the target heading. Never leave a copy behind.
+- Completing: prefer the circle in the panel, so the Tasks plugin writes the ✅ done date. In text, mark the checkbox [x] and append ✅ with the date.
+- A daily note's "# Events:" section holds calendar time blocks (Day Planner). Never treat those lines as tasks. (Keep this rule only if my daily notes have such a section.)
+- Edit only the lines a request is about. No bulk rewrites of old notes.
+
+STEPS
+1. Plugins. Tasks (folder .obsidian/plugins/obsidian-tasks-plugin/) and Daily Task Panel (.obsidian/plugins/daily-task-panel/) each count as installed only if the folder has a main.js and the plugin id is listed in .obsidian/community-plugins.json. If either is missing, ask me to install and enable it in Settings → Community plugins (search "Tasks", then "Daily Task Panel"), then check the folder again. Tasks must use its default "Tasks Emoji Format".
+2. Daily notes. Ask me to switch on the "Daily notes" core plugin in Settings → Core plugins (don't edit core-plugins.json yourself). Read .obsidian/daily-notes.json. If it doesn't exist, propose folder "Daily Notes", date format "YYYY/MM/MM-DD, ddd" (one folder per year and month) and template "Templates/daily-notes" (Obsidian stores the template path without .md). Keep my settings if I already have them.
+3. Daily note template. If the template file doesn't exist, create Templates/daily-notes.md with exactly these lines:
+---
+created: "{{date:YYYY-MM-DD}}"
+---
+# Tasks:
+
+## TO-DO:
+
+# Events:
+
+# Notes:
+The Daily notes plugin fills in {{date:...}}. If a template already exists, keep it; if it has no capture heading, ask before adding one, and tell me the heading's exact text.
+4. Projects. Create Projects/Active/ and Projects/Archive/ if missing. If Templates/project-notes.md doesn't exist, create it with exactly these lines (the panel fills in {{title}} and {{date:YYYY-MM-DD}} when it creates a project):
+---
+type: project
+status: later
+start:
+deadline:
+created: "{{date:YYYY-MM-DD}}"
+---
+# {{title}}
+
+## Goal:
+
+## Done when:
+
+## Tasks:
+5. Panel settings. Tell me what to enter in Settings → Daily Task Panel. Obsidian is usually open by now, and it overwrites .obsidian/plugins/daily-task-panel/data.json while running, so write that file directly only if I tell you Obsidian is closed (keys you leave out keep their defaults). A heading setting is the heading's text exactly as written, without the #s (keep a trailing colon if it has one). If steps 2–4 found my own folders, template or headings, use mine; for the layout above the values are:
+dailyNotesFolder "Daily Notes"   (used only while the Daily notes plugin is off)
+projectsFolder "Projects/Active"
+archiveFolder "Projects/Archive"
+inboxHeading "TO-DO:"
+moveTargetHeading "Tasks:"
+projectTemplatePath "Templates/project-notes.md"
+pacingMode "hybrid", wipLimit 3, pressWindow 7
+machineNotePath ""   (set it only if a sync tool rewrites one of my notes on its own)
+6. Existing tasks. Find open checkbox lines (- [ ] or * [ ], indented ones included) that the panel won't show under the rules above, and lines that use [scheduled:: ] or [due:: ] fields, which the Tasks emoji format ignores. Report how many of each, where, and a few examples, and explain why they are invisible. Offer, don't apply, the fixes: turn [due:: DATE] into 📅 DATE and [scheduled:: DATE] into ⏳ DATE, and move undated tasks under today's capture heading or into a project.
+7. Agent rules. Offer to save the RULES above to the vault root's AGENTS.md (or CLAUDE.md, whichever already exists; AGENTS.md if neither) under a "## Daily Task Panel" heading, with my real folders and headings filled in. Write any checkbox example inside backticks, so the rules file doesn't itself contain a task.
+8. Test. Find today's daily note from the daily notes folder and date format. If it doesn't exist, create it from the template, filling any {{date}} placeholders with today's date yourself. Add "- [ ] try Daily Task Panel" directly under its capture heading. Ask me to run "Daily Task Panel: Open panel" from the command palette and check that the task shows in the To-do section. If it doesn't, check in this order: both plugins enabled, the Daily notes core plugin on, the heading text matching inboxHeading exactly, Tasks set to its emoji format.
+```
+
+## Everyday use with an agent
+
+Once the rules are saved in your vault's `AGENTS.md`, you can ask for help in plain words. The panel stays where you work; the agent is useful for the thinking around it. For a morning plan, paste:
+
+```text
+Read the Daily Task Panel rules in AGENTS.md. Look at today's daily note, my undated captures from the last seven days, and the ## Tasks: sections of projects with status now. Propose today's list: at most five tasks, each with a one-line reason. Then propose a home for each undated capture: a start date, a project, or cancel. Show the exact line edits first. Apply them only after I say yes. Don't touch # Events:, completed tasks, or notes I didn't mention.
+```
+
+Other requests that work well:
+
+- *"Triage my inbox: for each undated task in this week's daily notes, suggest a start date, a project, or cancel."*
+- *"What has slipped more than twice? Suggest which to drop and which to move to a project."*
+- *"Weekly review: which projects should be `now` next week? Keep it to three, and tell me what that pushes out."*
+- *"Break the project `website-redesign` into tasks I can finish in a day each, under its `## Tasks:` heading."*
+- *"Start a project called `conference-talk` from my project template, with a deadline of 2026-11-02, and move today's talk-related captures into it."*
 
 ## 60-second start
 
