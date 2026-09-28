@@ -1,6 +1,7 @@
 import {FuzzySuggestModal, Modal} from 'obsidian'
 
 import type {App, FuzzyMatch} from 'obsidian'
+import type {ProjectChoice, Prompter} from '../core/actions'
 import type {ProjectMeta} from '../core/types'
 
 /**
@@ -97,7 +98,6 @@ export const askText = (
     input.focus()
   })
 
-export type ProjectChoice = {kind: 'project'; project: ProjectMeta} | {kind: 'new'; name?: string}
 
 export const pickProject = (
   app: App,
@@ -144,3 +144,11 @@ export const pickProject = (
       }
     })().open()
   })
+
+/** The shell's answer to the actions' questions: Obsidian modals, one promise each. */
+export const obsidianPrompter = (app: App): Prompter => ({
+  askText: opts => askText(app, opts),
+  askDate: opts => askDate(app, opts),
+  confirm: opts => confirm(app, opts),
+  pickProject: projects => pickProject(app, projects),
+})

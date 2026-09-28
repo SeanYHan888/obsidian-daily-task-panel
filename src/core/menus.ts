@@ -5,7 +5,7 @@ import {postponeAnchor, resolveQuickDate} from './schedule'
 import type {MachineNoteConfig} from './machine-note'
 import type {QuickDate, RelativeDate} from './schedule'
 import type {MoveDirection} from './order'
-import type {PacingMode, ProjectMeta, ProjectStatus, Task} from './types'
+import type {PacingMode, ProjectMeta, ProjectStatus, SectionKey, Task} from './types'
 
 /**
  * Menus as data: core decides which items exist, what they say, and what
@@ -224,6 +224,13 @@ export const taskMenuSpec = (
     item('Cancel task', 'x', {type: 'cancel'}),
   ]
 }
+
+/** Which acts a section header carries is policy (#15): stated here, once. */
+export const sectionCapabilities = (key: SectionKey): Omit<SectionMenuConfig, 'selecting'> => ({
+  selectable: key === 'today' || key === 'projects',
+  repairable: key === 'slipped',
+  organizable: key === 'projects',
+})
 
 export type SectionMenuConfig = {
   /** The one global select mode's current state — either header toggles it. */

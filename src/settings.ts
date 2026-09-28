@@ -4,7 +4,9 @@ import type {App} from 'obsidian'
 import type {PacingMode} from './core/types'
 import type DailyTaskPanelPlugin from './main'
 
-export type SectionKey = 'today' | 'slipped' | 'upcoming' | 'inbox' | 'projects'
+import type {SectionKey} from './core/types'
+
+export type {SectionKey} from './core/types'
 
 export type PanelSettings = {
   dailyNotesFolder: string

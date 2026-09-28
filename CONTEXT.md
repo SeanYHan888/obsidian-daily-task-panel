@@ -96,6 +96,10 @@ Day Planner's section of the daily note — time blocks, not tasks. Daily Task P
 
 ### Panel grammar
 
+**Panel action**:
+One act the panel offers, performed in full by core (`core/actions.ts`): a `MenuAction` (the menus' vocabulary, which every button, chip and drop speaks too) on a subject — a task list, a project, a section — guarded (machine-managed rows survive only check-off and the jump), dated against the projection it was offered on (its `today`, never a fresh clock read), written through the ports, and named. It returns what only the shell can finish: a journal entry or notice to show, and a UI effect (a jump, select mode, a fold, the start menu after a drop). The acts ask through a prompter — the shell's modals, a script in tests. The view is the shell and decides nothing (2026-09-27).
+
+
 The rules every menu and affordance obeys (#14), so the next one has a rule to follow instead of a precedent to drift from:
 
 **Menu order**:

@@ -1,6 +1,8 @@
 import {isInboxCapture} from './classify'
 import {isMachineManaged} from './machine-note'
 
+import type {SectionKey} from './types'
+
 /**
  * Drag and drop adds no write paths: a drop is a way of pointing at an edit
  * that already exists. This mapping is the whole semantics — the UI executes
@@ -8,7 +10,7 @@ import {isMachineManaged} from './machine-note'
  */
 
 export type DropTarget =
-  | {kind: 'section'; key: 'today' | 'slipped' | 'upcoming' | 'inbox' | 'projects'}
+  | {kind: 'section'; key: SectionKey}
   | {kind: 'project'; path: string}
 
 export type DropIntent =

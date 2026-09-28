@@ -21,6 +21,9 @@ export type Task = HierarchyItem & {
   children: Task[]
 }
 
+/** The panel's sections, as keys: settings, drop targets and section acts name them. */
+export type SectionKey = 'today' | 'slipped' | 'upcoming' | 'inbox' | 'projects'
+
 export type ProjectStatus = 'now' | 'next' | 'later'
 
 export type ProjectMeta = {
