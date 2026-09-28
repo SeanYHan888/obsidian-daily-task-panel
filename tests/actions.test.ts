@@ -84,9 +84,11 @@ describe('task acts', () => {
     const t = task('write intro')
     const {ctx, ports} = context({today: '2026-09-27'})
     const result = await performAction(ctx, {kind: 'tasks', tasks: [t]}, {type: 'schedule', kind: 'tomorrow'})
-    expect(ports.editor.calls).toEqual([{op: 'reschedule', tasks: ['write intro'], args: ['2026-09-28', '2026-09-27']}])
-    expect(result.entry?.label).toBe('start → 2026-09-28')
-    expect(result.notice).toBeNull()
+    expect(ports.editor.calls).toEqual([
+      {op: 'reschedule', tasks: ['write intro'], args: [{kind: 'reschedule', date: '2026-09-28', today: '2026-09-27'}]},
+    ])
+    expect(result.entry?.label).toBe('start → 2026-09-28 on 1 task')
+    expect(result.notices).toEqual([])
   })
 
   it('every line edit drops machine-managed rows — the guard has one home', async () => {
@@ -94,7 +96,7 @@ describe('task acts', () => {
     const plain = task('plain')
     const {ctx, ports} = context()
     await performAction(ctx, {kind: 'tasks', tasks: [managed, plain]}, {type: 'remove-date'})
-    expect(ports.editor.calls).toEqual([{op: 'unschedule', tasks: ['plain'], args: []}])
+    expect(ports.editor.calls).toEqual([{op: 'unschedule', tasks: ['plain'], args: [{kind: 'unschedule'}]}])
     const only = await performAction(ctx, {kind: 'tasks', tasks: [managed]}, {type: 'cancel'})
     expect(only.entry).toBeNull()
     expect(ports.editor.calls).toHaveLength(1)
@@ -116,6 +118,7 @@ describe('task acts', () => {
     await performAction(ctx, {kind: 'tasks', tasks: [a, b]}, {type: 'complete'})
     expect(ports.tasks.toggled).toEqual(['a', 'b'])
     const result = await performAction(ctx, {kind: 'tasks', tasks: [a, b]}, {type: 'cancel'})
+    expect(ports.editor.calls).toEqual([{op: 'cancel', tasks: ['a', 'b'], args: [{kind: 'cancel'}]}])
     expect(result.entry?.label).toBe('cancelled 2 tasks')
     expect(result.entry?.records).toHaveLength(2)
   })
@@ -126,13 +129,13 @@ describe('task acts', () => {
     const {ctx, ports} = context({prompter})
     await performAction(ctx, {kind: 'tasks', tasks: [t]}, {type: 'pick-due-date'})
     expect(prompter.asked).toEqual(['date:Due on'])
-    expect(ports.editor.calls).toEqual([{op: 'setDue', tasks: ['pay invoice'], args: ['2026-10-10']}])
+    expect(ports.editor.calls).toEqual([{op: 'set-due', tasks: ['pay invoice'], args: [{kind: 'set-due', date: '2026-10-10'}]}])
   })
 
   it('a closed picker is silence, not an edit', async () => {
     const {ctx, ports} = context({prompter: fakePrompter({})})
     const result = await performAction(ctx, {kind: 'tasks', tasks: [task('x')]}, {type: 'pick-date'})
-    expect(result).toEqual({entry: null, notice: null, effect: null})
+    expect(result).toEqual({entry: null, notices: [], effect: null})
     expect(ports.editor.calls).toEqual([])
   })
 
@@ -145,7 +148,7 @@ describe('task acts', () => {
     const changed = fakePrompter({text: ['draft v2 #tag']})
     const second = context({prompter: changed})
     await performAction(second.ctx, {kind: 'tasks', tasks: [t]}, {type: 'edit-text'})
-    expect(second.ports.editor.calls).toEqual([{op: 'editText', tasks: ['draft'], args: ['draft v2 #tag']}])
+    expect(second.ports.editor.calls).toEqual([{op: 'edit-text', tasks: ['draft'], args: [{kind: 'edit-text', text: 'draft v2 #tag'}]}])
   })
 
   it('move to project: pick New project, name it, and the rows land in the created note', async () => {
@@ -176,7 +179,9 @@ describe('drops', () => {
     const t = task('later', {scheduled: '2026-10-01', heading: null})
     const {ctx, ports} = context({today: '2026-09-27'})
     await performDrop(ctx, t, {kind: 'section', key: 'today'})
-    expect(ports.editor.calls).toEqual([{op: 'reschedule', tasks: ['later'], args: ['2026-09-27', '2026-09-27']}])
+    expect(ports.editor.calls).toEqual([
+      {op: 'reschedule', tasks: ['later'], args: [{kind: 'reschedule', date: '2026-09-27', today: '2026-09-27'}]},
+    ])
   })
 
   it('a drop on Upcoming asks for a date: the shell opens the start menu', async () => {
@@ -191,7 +196,7 @@ describe('drops', () => {
     const managed = task('reminder', {filePath: layout.machineNotePath})
     const {ctx, ports} = context()
     const result = await performDrop(ctx, managed, {kind: 'project', path: 'Projects/Active/p.md'})
-    expect(result).toEqual({entry: null, notice: null, effect: null})
+    expect(result).toEqual({entry: null, notices: [], effect: null})
     expect(ports.editor.calls).toEqual([])
   })
 })
@@ -206,8 +211,8 @@ describe('project acts', () => {
     const viaButton = context({projects: [a, b, c], sections: shown, wipLimit: 2})
     const menu = await performAction(viaMenu.ctx, {kind: 'project', project: c}, {type: 'set-status', status: 'now'})
     const button = await performAction(viaButton.ctx, {kind: 'project', project: c}, {type: 'promote'})
-    expect(menu.notice).toBe('Daily Task Panel: c → now — now is full (3/2)')
-    expect(button.notice).toBe(menu.notice)
+    expect(menu.notices).toEqual(['Daily Task Panel: c → now — now is full (3/2)'])
+    expect(button.notices).toEqual(menu.notices)
     expect(viaMenu.ports.projects.writes).toEqual(viaButton.ports.projects.writes)
   })
 
@@ -218,7 +223,7 @@ describe('project acts', () => {
     const declined = context({projects: [p], sections: withTasks, prompter: decline})
     expect(await performAction(declined.ctx, {kind: 'project', project: p}, {type: 'retire', status: 'done'})).toEqual({
       entry: null,
-      notice: null,
+      notices: [],
       effect: null,
     })
     expect(decline.asked).toEqual(['confirm:Mark p done?'])
@@ -226,7 +231,7 @@ describe('project acts', () => {
     const empty = context({projects: [p], sections: sections({projects: [group(p)]}), prompter: silent})
     const result = await performAction(empty.ctx, {kind: 'project', project: p}, {type: 'retire', status: 'dropped'})
     expect(silent.asked).toEqual([])
-    expect(result.notice).toBe('Daily Task Panel: p marked dropped — archived to Projects/Archive')
+    expect(result.notices).toEqual(['Daily Task Panel: p marked dropped — archived to Projects/Archive'])
   })
 
   it('rename carries the fold toggle as an effect and speaks the menu’s words', async () => {
@@ -234,7 +239,7 @@ describe('project acts', () => {
     const {ctx, ports} = context({projects: [p], prompter: fakePrompter({text: ['new']})})
     ports.projects.rename = (_path, name) => Promise.resolve(`Projects/Active/${name}.md`)
     const result = await performAction(ctx, {kind: 'project', project: p}, {type: 'rename-project'})
-    expect(result.notice).toBe('Daily Task Panel: old → new')
+    expect(result.notices).toEqual(['Daily Task Panel: old → new'])
     expect(result.effect).toEqual({kind: 'project-renamed', from: p.path, to: 'Projects/Active/new.md'})
   })
 
@@ -245,7 +250,7 @@ describe('project acts', () => {
     const result = await performAction(ctx, {kind: 'project', project: dated}, {type: 'pick-deadline'})
     expect(prompter.asked).toEqual(['date:Project deadline'])
     expect(ports.projects.writes).toEqual([{path: dated.path, patch: {deadline: '2026-11-05'}}])
-    expect(result.notice).toBe('Daily Task Panel: d deadline → 2026-11-05')
+    expect(result.notices).toEqual(['Daily Task Panel: d deadline → 2026-11-05'])
   })
 })
 
@@ -262,14 +267,16 @@ describe('section acts', () => {
     const managed = task('reminder', {filePath: layout.machineNotePath, due: '2026-09-20'})
     const {ctx, ports} = context({sections: sections({slipped: [slipped, managed]})})
     await performAction(ctx, {kind: 'section', key: 'slipped'}, {type: 'reschedule-all'})
-    expect(ports.editor.calls).toEqual([{op: 'reschedule', tasks: ['slipped'], args: [TODAY, TODAY]}])
+    expect(ports.editor.calls).toEqual([
+      {op: 'reschedule', tasks: ['slipped'], args: [{kind: 'reschedule', date: TODAY, today: TODAY}]},
+    ])
   })
 
   it('New project creates and says so; fold-all and select are effects', async () => {
     const {ctx, ports} = context({prompter: fakePrompter({text: ['Fresh']})})
     ports.projects.create = name => Promise.resolve(`Projects/Active/${name}.md`)
     const created = await performAction(ctx, {kind: 'section', key: 'projects'}, {type: 'new-project'})
-    expect(created.notice).toBe('Daily Task Panel: project Fresh created')
+    expect(created.notices).toEqual(['Daily Task Panel: project Fresh created'])
     expect((await performAction(ctx, {kind: 'section', key: 'projects'}, {type: 'fold-all', folded: true})).effect).toEqual({
       kind: 'fold-all',
       folded: true,
@@ -277,5 +284,49 @@ describe('section acts', () => {
     expect((await performAction(ctx, {kind: 'section', key: 'today'}, {type: 'toggle-select'})).effect).toEqual({
       kind: 'toggle-select',
     })
+  })
+})
+
+describe('what a relocation has to say', () => {
+  it('names skipped and duplicated rows in the words the adapters once raised, beside the journal entry', async () => {
+    const t = task('moved')
+    const {ctx, ports} = context({prompter: fakePrompter({project: [{kind: 'project', project: project('p')}]})})
+    ports.editor.moveToProject = () =>
+      Promise.resolve({
+        entry: {label: 'moved 1 task to p', records: []},
+        moved: 1,
+        duplicated: 1,
+        skipped: 2,
+        headingMissing: false,
+        target: {path: 'Projects/Active/p.md', missing: false},
+      })
+    const result = await performAction(ctx, {kind: 'tasks', tasks: [t]}, {type: 'move-to-project'})
+    expect(result.entry?.label).toBe('moved 1 task to p')
+    expect(result.notices).toEqual([
+      'Daily Task Panel: 1 task copied but not cut — the source note changed mid-move; remove the originals by hand',
+      'Daily Task Panel: 2 tasks not moved (changed since selection, or already in the target note)',
+    ])
+  })
+
+  it('a missing daily note or inbox heading refuses send-back and says which', async () => {
+    const t = task('back', {filePath: 'Projects/Active/p.md', heading: 'Tasks'})
+    const {ctx, ports} = context()
+    const outcome = (over: {missing?: boolean; headingMissing?: boolean}) => () =>
+      Promise.resolve({
+        entry: null,
+        moved: 0,
+        duplicated: 0,
+        skipped: 0,
+        headingMissing: over.headingMissing ?? false,
+        target: {path: 'Daily Notes/2026-09-27.md', missing: over.missing ?? false},
+      })
+    ports.editor.sendBackToInbox = outcome({missing: true})
+    const missing = await performAction(ctx, {kind: 'tasks', tasks: [t]}, {type: 'send-back'})
+    expect(missing.notices).toEqual([
+      "Daily Task Panel: today's daily note not found (Daily Notes/2026-09-27.md) — create it first",
+    ])
+    ports.editor.sendBackToInbox = outcome({headingMissing: true})
+    const noHeading = await performAction(ctx, {kind: 'tasks', tasks: [t]}, {type: 'send-back'})
+    expect(noHeading.notices).toEqual(['Daily Task Panel: no "Inbox" heading in today\'s daily note — nothing sent back'])
   })
 })

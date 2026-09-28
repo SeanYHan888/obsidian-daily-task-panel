@@ -1,6 +1,6 @@
 import {Notice, TFile} from 'obsidian'
 
-import {editLine, sameLine} from './lines'
+import {replaceLines} from '../core/note-edit'
 
 import type {App, EventRef} from 'obsidian'
 import type {Task} from '../core/types'
@@ -118,14 +118,11 @@ export const toggleTask = async (app: App, task: Task): Promise<void> => {
   }
   let stale = false
   await app.vault.process(file, data => {
-    const lines = data.split('\n')
-    const line = lines[task.line]
-    if (!sameLine(line, task.sourceLine)) {
-      stale = true
-      return data
-    }
-    lines[task.line] = editLine(line, bare => api.executeToggleTaskDoneCommand(bare, task.filePath))
-    return lines.join('\n')
+    const result = replaceLines(data, task.filePath, [task], bare =>
+      api.executeToggleTaskDoneCommand(bare, task.filePath),
+    )
+    stale = result.stale > 0
+    return result.data
   })
   if (stale) new Notice('Daily Task Panel: task moved since last refresh — refreshing instead')
 }

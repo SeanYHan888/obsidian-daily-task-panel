@@ -96,6 +96,9 @@ Day Planner's section of the daily note — time blocks, not tasks. Daily Task P
 
 ### Panel grammar
 
+**Note edit**:
+A task-line write as text in, text out (`core/note-edit.ts`): verify-and-replace (each line must still read what was selected — a stale line is skipped, never guessed at), land blocks under a heading, and cut blocks only if the note still reads as the snapshot the cut was planned from (a changed note keeps its lines: a duplicate to clean up, never a lost task). Line endings and the journal records undo relies on are made here. The line editor adapter is the file lookup around these steps; a `TaskEdit` names each per-line edit and its label from one value (2026-09-27).
+
 **Panel action**:
 One act the panel offers, performed in full by core (`core/actions.ts`): a `MenuAction` (the menus' vocabulary, which every button, chip and drop speaks too) on a subject — a task list, a project, a section — guarded (machine-managed rows survive only check-off and the jump), dated against the projection it was offered on (its `today`, never a fresh clock read), written through the ports, and named. It returns what only the shell can finish: a journal entry or notice to show, and a UI effect (a jump, select mode, a fold, the start menu after a drop). The acts ask through a prompter — the shell's modals, a script in tests. The view is the shell and decides nothing (2026-09-27).
 

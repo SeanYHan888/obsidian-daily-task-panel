@@ -1,4 +1,5 @@
 import {collectDescendantLineNumbers} from './hierarchy'
+import {stripCr} from './lines'
 
 import type {ListItemRelation} from './hierarchy'
 
@@ -92,7 +93,9 @@ export const insertUnderHeadingAt = (
   let headingIndex = -1
   let headingLevel = 0
   for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(/^(#{1,6})\s+(.*)$/)
+    // Bare line: `.` never matches a trailing '\r', so a CRLF note's heading
+    // would otherwise go unfound and be created a second time.
+    const match = stripCr(lines[i]).match(/^(#{1,6})\s+(.*)$/)
     if (match && normalizeHeading(match[2]) === target) {
       headingIndex = i
       headingLevel = match[1].length

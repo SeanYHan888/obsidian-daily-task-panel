@@ -290,7 +290,7 @@ export class PanelView extends ItemView {
   /** What only the shell can do with a result: journal + notice, then the UI effect. */
   private finish(result: ActionResult, ev?: MouseEvent): void {
     if (result.entry) this.record(result.entry)
-    else if (result.notice) new Notice(result.notice)
+    for (const notice of result.notices) new Notice(notice)
     const effect = result.effect
     if (!effect) return
     switch (effect.kind) {

@@ -1,5 +1,4 @@
-import {TFile} from 'obsidian'
-
+import {processNote} from './line-editor'
 import {undoRecordsInFile} from '../core/journal'
 
 import type {App} from 'obsidian'
@@ -27,17 +26,13 @@ export const undoEntry = async (
   let stale = 0
   const groups = [...byFile.entries()].sort(([, a], [, b]) => rank(a) - rank(b))
   for (const [path, records] of groups) {
-    const file = app.vault.getAbstractFileByPath(path)
-    if (!(file instanceof TFile)) {
-      stale += records.length
-      continue
-    }
-    await app.vault.process(file, data => {
+    const found = await processNote(app, path, data => {
       const result = undoRecordsInFile(data.split('\n'), records)
       reverted += result.reverted
       stale += result.stale
       return result.lines.join('\n')
     })
+    if (!found) stale += records.length
   }
   return {reverted, stale}
 }

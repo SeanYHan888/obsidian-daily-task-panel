@@ -1,6 +1,7 @@
 import {Notice, TAbstractFile, TFile, TFolder, Vault, normalizePath} from 'obsidian'
 
 import {inFolder} from '../core/classify'
+import {headingLine} from '../core/move'
 
 import type {App} from 'obsidian'
 import type {ProjectMeta, ProjectPatch, ProjectStatus} from '../core/types'
@@ -184,4 +185,52 @@ export const renameProject = async (
     return null
   }
   return target
+}
+
+/** The built-in scaffold: only what the panel itself reads — a status and the move-target heading. No vault-specific frontmatter conventions (#6). */
+const FALLBACK_TEMPLATE = (name: string, heading: string) => `---
+status: later
+---
+# ${name}
+
+${heading}
+`
+
+/**
+ * Creates a project note from the configured template, or from the built-in
+ * scaffold when no template is set or the note is missing — "New project"
+ * never dead-ends (#6). The heading comes from the move-target setting,
+ * never hardcoded. Returns the existing note if the name is already taken.
+ */
+export const createProjectFromTemplate = async (
+  app: App,
+  rawName: string,
+  projectsFolder: string,
+  templatePath: string,
+  targetHeading: string,
+  today: string,
+): Promise<TFile | null> => {
+  const name = rawName.replace(/[\\/:#^[\]|]/g, ' ').trim()
+  if (!name) return null
+  const folder = projectsFolder.replace(/\/$/, '')
+  const path = `${folder}/${name}.md`
+
+  const existing = app.vault.getAbstractFileByPath(path)
+  if (existing instanceof TFile) {
+    new Notice(`Daily Task Panel: project "${name}" already exists — moving into it`)
+    return existing
+  }
+  if (folder && !app.vault.getAbstractFileByPath(folder)) {
+    await app.vault.createFolder(folder)
+  }
+
+  const templateFile = templatePath ? app.vault.getAbstractFileByPath(templatePath) : null
+  if (templateFile instanceof TFile) {
+    const content = (await app.vault.read(templateFile))
+      .replaceAll('{{title}}', name)
+      .replaceAll('{{date:YYYY-MM-DD}}', today)
+    return app.vault.create(path, content)
+  }
+
+  return app.vault.create(path, FALLBACK_TEMPLATE(name, headingLine(targetHeading)))
 }

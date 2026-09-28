@@ -1,7 +1,9 @@
 import {fakeProjectStore} from './project-store'
 
 import type {Prompter, ProjectChoice} from '../../src/core/actions'
-import type {JournalEntry} from '../../src/core/journal'
+import {editLabel} from '../../src/core/note-edit'
+
+import type {JournalEntry, LineRecord} from '../../src/core/journal'
 import type {LineEditor, Ports, TaskSource} from '../../src/core/ports'
 import type {ProjectMeta, Task} from '../../src/core/types'
 
@@ -32,41 +34,51 @@ const entry = (label: string, tasks: readonly Task[]): JournalEntry | null =>
 export const fakeEditor = (): FakeEditor => {
   const editor: FakeEditor = {
     calls: [],
-    reschedule: (tasks, date, today) => {
-      editor.calls.push({op: 'reschedule', tasks: tasks.map(t => t.description), args: [date, today]})
-      return Promise.resolve(entry(`start → ${date}`, tasks))
-    },
-    unschedule: tasks => {
-      editor.calls.push({op: 'unschedule', tasks: tasks.map(t => t.description), args: []})
-      return Promise.resolve(entry('start cleared', tasks))
-    },
-    setDue: (tasks, date) => {
-      editor.calls.push({op: 'setDue', tasks: tasks.map(t => t.description), args: [date]})
-      return Promise.resolve(entry(`due → ${date}`, tasks))
-    },
-    clearDue: tasks => {
-      editor.calls.push({op: 'clearDue', tasks: tasks.map(t => t.description), args: []})
-      return Promise.resolve(entry('due cleared', tasks))
-    },
-    cancel: task => {
-      editor.calls.push({op: 'cancel', tasks: [task.description], args: []})
-      return Promise.resolve(entry('cancelled 1 task', [task]))
-    },
-    editText: (task, text) => {
-      editor.calls.push({op: 'editText', tasks: [task.description], args: [text]})
-      return Promise.resolve(entry('edited the text of 1 task', [task]))
+    edit: (tasks, edit) => {
+      editor.calls.push({op: edit.kind, tasks: tasks.map(t => t.description), args: [edit]})
+      // One record per task, with the field stamped so the label reads as the real one would.
+      const records = tasks.map(
+        (t): LineRecord => ({
+          kind: 'replace',
+          file: t.filePath,
+          line: t.line,
+          before: t.sourceLine,
+          after: edit.kind === 'reschedule' ? `${t.sourceLine} ⏳ ${edit.date}` : t.sourceLine,
+        }),
+      )
+      return Promise.resolve({
+        entry: records.length === 0 ? null : {label: editLabel(edit, records), records},
+        stale: 0,
+      })
     },
     moveToProject: (tasks, projectPath) => {
       editor.calls.push({op: 'moveToProject', tasks: tasks.map(t => t.description), args: [projectPath]})
-      return Promise.resolve({moved: tasks.length, entry: entry(`moved to ${projectPath}`, tasks)})
+      return Promise.resolve({
+        entry: entry(`moved to ${projectPath}`, tasks),
+        moved: tasks.length,
+        duplicated: 0,
+        skipped: 0,
+        headingMissing: false,
+        target: {path: projectPath, missing: false},
+      })
     },
     sendBackToInbox: (tasks, today) => {
       editor.calls.push({op: 'sendBackToInbox', tasks: tasks.map(t => t.description), args: [today]})
-      return Promise.resolve({moved: tasks.length, entry: entry('sent back to To-do', tasks)})
+      return Promise.resolve({
+        entry: entry('sent back to To-do', tasks),
+        moved: tasks.length,
+        duplicated: 0,
+        skipped: 0,
+        headingMissing: false,
+        target: {path: 'Daily Notes/today.md', missing: false},
+      })
     },
     addTask: (projectPath, text) => {
       editor.calls.push({op: 'addTask', tasks: [], args: [projectPath, text]})
-      return Promise.resolve({label: `added a task to ${projectPath}`, records: []})
+      return Promise.resolve({
+        entry: {label: `added a task to ${projectPath}`, records: []},
+        target: {path: projectPath, missing: false},
+      })
     },
   }
   return editor

@@ -1,22 +1,10 @@
 import {TFolder, normalizePath} from 'obsidian'
 
-import {
-  cancelTask,
-  clearDueTasks,
-  editTaskText,
-  rescheduleTasks,
-  setDueTasks,
-  unscheduleTasks,
-} from './edit-lines'
 import {dailyNotesConfig, resolveLayout} from './layout'
-import {
-  addTaskToProject,
-  createProjectFromTemplate,
-  moveTasksToProject,
-  sendTasksBackToInbox,
-} from './move-tasks'
+import {addTaskToProject, editTasks, moveTasksToProject, sendTasksBackToInbox} from './line-editor'
 import {
   archiveProject,
+  createProjectFromTemplate,
   onProjectsChange,
   readProjects,
   renameProject,
@@ -80,12 +68,7 @@ export const createPorts = (app: App, settings: () => PanelSettings): Ports => {
       rename: (path, name) => renameProject(app, path, name),
     },
     editor: {
-      reschedule: (tasks, date, today) => rescheduleTasks(app, tasks, date, today),
-      unschedule: tasks => unscheduleTasks(app, tasks),
-      setDue: (tasks, date) => setDueTasks(app, tasks, date),
-      clearDue: tasks => clearDueTasks(app, tasks),
-      cancel: task => cancelTask(app, task),
-      editText: (task, text) => editTaskText(app, task, text),
+      edit: (tasks, edit) => editTasks(app, tasks, edit),
       moveToProject: (tasks, projectPath) =>
         moveTasksToProject(app, tasks, projectPath, layout().moveTargetHeading),
       sendBackToInbox: (tasks, today) => sendTasksBackToInbox(app, tasks, layout(), today),

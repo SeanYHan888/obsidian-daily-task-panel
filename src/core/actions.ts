@@ -11,7 +11,8 @@ import type {JournalEntry} from './journal'
 import type {ProjectDateEdit} from './labels'
 import type {VaultLayout} from './layout'
 import type {MenuAction} from './menus'
-import type {Ports} from './ports'
+import type {TaskEdit} from './note-edit'
+import type {MoveOutcome, Ports} from './ports'
 import type {PacingMode, ProjectMeta, Sections, Subject, Task} from './types'
 
 export type {Subject} from './types'
@@ -62,24 +63,63 @@ export type UiEffect =
   | {kind: 'schedule-menu'; tasks: Task[]}
 
 export type ActionResult = {
-  /** A line edit's undoable record; its label is the notice. */
+  /** A line edit's undoable record; its label is shown with an Undo link. */
   entry: JournalEntry | null
-  /** What to tell the user when nothing is journaled; null when silence is right. */
-  notice: string | null
+  /** What else to tell the user, in the menu's words; empty when silence is right. */
+  notices: string[]
   effect: UiEffect | null
 }
 
-const NOTHING: ActionResult = {entry: null, notice: null, effect: null}
-const journaled = (entry: JournalEntry | null): ActionResult => ({...NOTHING, entry})
-const noticed = (notice: string | null): ActionResult => ({...NOTHING, notice})
+const NOTHING: ActionResult = {entry: null, notices: [], effect: null}
+const journaled = (entry: JournalEntry | null, notices: string[] = []): ActionResult => ({
+  ...NOTHING,
+  entry,
+  notices,
+})
+const noticed = (notice: string | null): ActionResult => ({...NOTHING, notices: notice ? [notice] : []})
 const effect = (effect: UiEffect): ActionResult => ({...NOTHING, effect})
 
-/** One entry for a per-task act repeated over a selection. */
-const merged = (entries: (JournalEntry | null)[], label: (n: number) => string): JournalEntry | null => {
-  const records = entries.flatMap(e => e?.records ?? [])
-  const count = entries.filter(e => e != null).length
-  return records.length === 0 ? null : {label: count === 1 ? entries.find(e => e)!.label : label(count), records}
+/** A per-line edit's result: the entry, and the skipped lines named once. */
+const edited = async (ctx: ActionContext, tasks: Task[], edit: TaskEdit): Promise<ActionResult> => {
+  const outcome = await ctx.ports.editor.edit(tasks, edit)
+  return journaled(
+    outcome.entry,
+    outcome.stale > 0 ? [`Daily Task Panel: ${plural(outcome.stale)} moved since last refresh — skipped`] : [],
+  )
 }
+
+/** What a relocation has to say beyond its journal label, in the words the adapters once raised. */
+const moveNotices = (outcome: MoveOutcome, direction: 'to-project' | 'send-back', layout: VaultLayout): string[] => {
+  const notices: string[] = []
+  if (outcome.target.missing) {
+    return [
+      direction === 'to-project'
+        ? `Daily Task Panel: project note not found: ${outcome.target.path}`
+        : `Daily Task Panel: today's daily note not found (${outcome.target.path}) — create it first`,
+    ]
+  }
+  if (outcome.headingMissing) {
+    notices.push(
+      `Daily Task Panel: no "${layout.inboxHeading}" heading in today's daily note — nothing sent back`,
+    )
+  }
+  if (outcome.duplicated > 0) {
+    notices.push(
+      `Daily Task Panel: ${plural(outcome.duplicated)} copied but not cut — the ${direction === 'to-project' ? 'source' : 'project'} note changed mid-move; remove the originals by hand`,
+    )
+  }
+  if (outcome.skipped > 0) {
+    notices.push(
+      direction === 'to-project'
+        ? `Daily Task Panel: ${plural(outcome.skipped)} not moved (changed since selection, or already in the target note)`
+        : `Daily Task Panel: ${plural(outcome.skipped)} not sent back (changed since, or already in today's note)`,
+    )
+  }
+  return notices
+}
+
+const moved = (ctx: ActionContext, outcome: MoveOutcome, direction: 'to-project' | 'send-back'): ActionResult =>
+  journaled(outcome.entry, moveNotices(outcome, direction, ctx.layout))
 
 /** The move flow: pick a project or name a new one, then move the editable rows there. */
 const moveToProject = async (ctx: ActionContext, tasks: Task[]): Promise<ActionResult> => {
@@ -87,7 +127,7 @@ const moveToProject = async (ctx: ActionContext, tasks: Task[]): Promise<ActionR
   const choice = await ctx.prompter.pickProject(ctx.ports.projects.read())
   if (!choice) return NOTHING
   if (choice.kind === 'project') {
-    return journaled((await ctx.ports.editor.moveToProject(tasks, choice.project.path)).entry)
+    return moved(ctx, await ctx.ports.editor.moveToProject(tasks, choice.project.path), 'to-project')
   }
   const name = await ctx.prompter.askText({
     title: 'New project',
@@ -98,7 +138,7 @@ const moveToProject = async (ctx: ActionContext, tasks: Task[]): Promise<ActionR
   if (!name) return NOTHING
   const path = await ctx.ports.projects.create(name, ctx.today)
   if (!path) return NOTHING
-  return journaled((await ctx.ports.editor.moveToProject(tasks, path)).entry)
+  return moved(ctx, await ctx.ports.editor.moveToProject(tasks, path), 'to-project')
 }
 
 const performOnTasks = async (
@@ -121,7 +161,7 @@ const performOnTasks = async (
       return NOTHING
   }
   if (tasks.length === 0) return NOTHING
-  const reschedule = async (date: string) => journaled(await editor.reschedule(tasks, date, ctx.today))
+  const reschedule = (date: string) => edited(ctx, tasks, {kind: 'reschedule', date, today: ctx.today})
   switch (action.type) {
     case 'schedule':
       return reschedule(resolveQuickDate(action.kind, ctx.today))
@@ -139,7 +179,7 @@ const performOnTasks = async (
       return date ? reschedule(date) : NOTHING
     }
     case 'remove-date':
-      return journaled(await editor.unschedule(tasks))
+      return edited(ctx, tasks, {kind: 'unschedule'})
     case 'pick-due-date': {
       const task = tasks[0]
       const date = await ctx.prompter.askDate({
@@ -147,10 +187,10 @@ const performOnTasks = async (
         title: 'Due on',
         submitLabel: 'Set due date',
       })
-      return date ? journaled(await editor.setDue([task], date)) : NOTHING
+      return date ? edited(ctx, [task], {kind: 'set-due', date}) : NOTHING
     }
     case 'remove-due-date':
-      return journaled(await editor.clearDue(tasks))
+      return edited(ctx, tasks, {kind: 'clear-due'})
     case 'edit-text': {
       const task = tasks[0]
       const words = taskWords(task.sourceLine)
@@ -160,17 +200,14 @@ const performOnTasks = async (
         value: words,
         submitLabel: 'Save',
       })
-      return text && text !== words ? journaled(await editor.editText(task, text)) : NOTHING
+      return text && text !== words ? edited(ctx, [task], {kind: 'edit-text', text}) : NOTHING
     }
     case 'move-to-project':
       return moveToProject(ctx, tasks)
     case 'send-back':
-      return journaled((await editor.sendBackToInbox(tasks, ctx.today)).entry)
-    case 'cancel': {
-      const entries: (JournalEntry | null)[] = []
-      for (const task of tasks) entries.push(await editor.cancel(task))
-      return journaled(merged(entries, n => `cancelled ${plural(n)}`))
-    }
+      return moved(ctx, await editor.sendBackToInbox(tasks, ctx.today), 'send-back')
+    case 'cancel':
+      return edited(ctx, tasks, {kind: 'cancel'})
     default:
       return NOTHING
   }
@@ -240,7 +277,7 @@ const performOnProject = async (
       if (!path) return NOTHING
       return {
         entry: null,
-        notice: `Daily Task Panel: ${project.name} → ${name}`,
+        notices: [`Daily Task Panel: ${project.name} → ${name}`],
         effect: {kind: 'project-renamed', from: project.path, to: path},
       }
     }
@@ -253,7 +290,12 @@ const performOnProject = async (
         placeholder: 'Task',
         submitLabel: 'Add',
       })
-      return text ? journaled(await ctx.ports.editor.addTask(project.path, text)) : NOTHING
+      if (!text) return NOTHING
+      const outcome = await ctx.ports.editor.addTask(project.path, text)
+      return journaled(
+        outcome.entry,
+        outcome.target.missing ? [`Daily Task Panel: project note not found: ${outcome.target.path}`] : [],
+      )
     }
     case 'promote':
     case 'set-status': {
@@ -303,7 +345,7 @@ const performOnSection = async (ctx: ActionContext, action: MenuAction): Promise
       // is skipped, never guessed at.
       const slipped = editableTasks(flattenTaskTree(ctx.sections?.slipped ?? []), ctx.layout)
       if (slipped.length === 0) return NOTHING
-      return journaled(await ctx.ports.editor.reschedule(slipped, ctx.today, ctx.today))
+      return edited(ctx, slipped, {kind: 'reschedule', date: ctx.today, today: ctx.today})
     }
     default:
       return NOTHING
@@ -341,7 +383,7 @@ export const performDrop = async (
     case 'schedule-today':
       return performAction(ctx, {kind: 'tasks', tasks: [task]}, {type: 'schedule', kind: 'today'})
     case 'move-to-project':
-      return journaled((await ctx.ports.editor.moveToProject([task], intent.path)).entry)
+      return moved(ctx, await ctx.ports.editor.moveToProject([task], intent.path), 'to-project')
     case 'ask-date':
       return effect({kind: 'schedule-menu', tasks: [task]})
     default:

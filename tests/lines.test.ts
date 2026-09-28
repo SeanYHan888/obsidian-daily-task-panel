@@ -1,6 +1,6 @@
 import {assert, test} from 'vitest'
 
-import {carriageReturn, editLine, sameLine, stripCr, withEnding} from '../src/adapters/lines'
+import {carriageReturn, editLine, sameLine, stripCr, withEnding} from '../src/core/lines'
 import {setScheduled} from '../src/core/schedule'
 
 test('a CRLF note is recognised from its raw text; an LF note carries nothing', () => {
