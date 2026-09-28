@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest'
 
 import {performAction, performDrop} from '../src/core/actions'
-import {sectionCapabilities} from '../src/core/menus'
+import {sectionAffordances} from '../src/core/sections'
 import {fakePorts, fakePrompter} from './fakes/ports'
 
 import type {ActionContext} from '../src/core/actions'
@@ -256,10 +256,11 @@ describe('project acts', () => {
 
 describe('section acts', () => {
   it('which header carries which acts is stated once', () => {
-    expect(sectionCapabilities('today')).toEqual({selectable: true, repairable: false, organizable: false})
-    expect(sectionCapabilities('slipped')).toEqual({selectable: false, repairable: true, organizable: false})
-    expect(sectionCapabilities('upcoming')).toEqual({selectable: false, repairable: false, organizable: false})
-    expect(sectionCapabilities('projects')).toEqual({selectable: true, repairable: false, organizable: true})
+    expect(sectionAffordances('today')).toEqual({selectable: true, repairable: false, organizable: false, droppable: true})
+    expect(sectionAffordances('inbox')).toEqual({selectable: true, repairable: false, organizable: false, droppable: false})
+    expect(sectionAffordances('slipped')).toEqual({selectable: false, repairable: true, organizable: false, droppable: false})
+    expect(sectionAffordances('upcoming')).toEqual({selectable: false, repairable: false, organizable: false, droppable: true})
+    expect(sectionAffordances('projects')).toEqual({selectable: true, repairable: false, organizable: true, droppable: false})
   })
 
   it('Start all today sweeps the repair queue as last shown, minus machine-managed rows', async () => {

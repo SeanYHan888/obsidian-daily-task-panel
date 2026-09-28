@@ -171,6 +171,22 @@ export const canPlace = (displayed: readonly ProjectMeta[], path: string, target
   displayed.some(p => p.path === target)
 
 /**
+ * Where a dragged header would land relative to the target (#21): before it
+ * dragging up, after it dragging down — the rule placeWrites encodes, so the
+ * highlight and the write agree. Null when the drop would change nothing.
+ */
+export const placementEdge = (
+  displayed: readonly ProjectMeta[],
+  path: string,
+  target: string,
+): 'before' | 'after' | null => {
+  if (!canPlace(displayed, path, target)) return null
+  const from = displayed.findIndex(p => p.path === path)
+  const to = displayed.findIndex(p => p.path === target)
+  return from < to ? 'after' : 'before'
+}
+
+/**
  * Drag-to-reorder (#21): the dragged project takes the target's slot —
  * dragging up lands it before the target, dragging down lands it after,
  * the way every list drag reads. Same writer as the menu moves: landing

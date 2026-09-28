@@ -7,10 +7,17 @@
   import {icon} from './icon'
   import {dropIntent} from '../core/drop'
   import {EMPTY_LAYOUT} from '../core/layout'
-  import {canPlace, movableProjects as movableBand} from '../core/order'
+  import {canPlace, movableProjects as movableBand, placementEdge} from '../core/order'
   import {countTaskTree, locationKey} from '../core/hierarchy'
   import {chipLabel} from '../core/schedule'
-  import {projectFolded, pruneSelection, sectionCounts, selectionTasks, wipBadge} from '../core/sections'
+  import {
+    projectFolded,
+    pruneSelection,
+    sectionAffordances,
+    sectionCounts,
+    selectionTasks,
+    wipBadge,
+  } from '../core/sections'
 
   import type {DropTarget} from '../core/drop'
   import type {SectionKey, Task} from '../core/types'
@@ -57,13 +64,11 @@
   const movableProjects = $derived(movableBand(data.sections?.projects ?? []))
   const reorderValid = (targetPath: string): boolean =>
     dragProject != null && canPlace(movableProjects, dragProject, targetPath)
-  /** Where the dragged header would land relative to the target: a line above or below it. */
-  const reorderEdge = (targetPath: string): 'before' | 'after' | null => {
-    if (dragProject == null || dragOverProject !== targetPath || !reorderValid(targetPath)) return null
-    const from = movableProjects.findIndex(p => p.path === dragProject)
-    const to = movableProjects.findIndex(p => p.path === targetPath)
-    return from < to ? 'after' : 'before'
-  }
+  /** Where the dragged header would land relative to the target: core's rule (placementEdge), the one placeWrites obeys. */
+  const reorderEdge = (targetPath: string): 'before' | 'after' | null =>
+    dragProject != null && dragOverProject === targetPath
+      ? placementEdge(movableProjects, dragProject, targetPath)
+      : null
   /** Either payload may land on a project group; the drop handler tells them apart. */
   const projectTargetValid = (path: string): boolean =>
     dropValid({kind: 'project', path}) || reorderValid(path)
@@ -109,6 +114,13 @@
   }
 
   const counts = $derived(sectionCounts(data.sections))
+
+  // Which sections select and which catch a drop is core's table
+  // (sectionAffordances): the Panel wires a handler only where it says so.
+  const selectToggle = (key: SectionKey) =>
+    sectionAffordances(key).selectable ? toggleSelect : null
+  const dropHandler = (key: SectionKey) =>
+    sectionAffordances(key).droppable ? dropOn({kind: 'section', key}) : null
 
   const foldSection = (key: SectionKey, collapsed: boolean) =>
     callbacks.fold({kind: 'section', key}, collapsed)
@@ -160,7 +172,7 @@
       onMenu={ev => callbacks.menu({kind: 'section', key: 'today', selecting}, ev)}
       onCollapse={foldSection}
       dragActive={dropValid({kind: 'section', key: 'today'})}
-      onDropTask={dropOn({kind: 'section', key: 'today'})}
+      onDropTask={dropHandler('today')}
     >
       {#each data.sections.today as task (locationKey(task.filePath, task.line))}
         <TaskRow
@@ -168,7 +180,7 @@
           {ctx}
           selectMode={selecting}
           {selectedKeys}
-          onToggleSelect={toggleSelect}
+          onToggleSelect={selectToggle('today')}
         />
       {/each}
       {#each data.sections.inbox as task (locationKey(task.filePath, task.line))}
@@ -177,7 +189,7 @@
           {ctx}
           selectMode={selecting}
           {selectedKeys}
-          onToggleSelect={toggleSelect}
+          onToggleSelect={selectToggle('inbox')}
         />
       {/each}
     </Section>
@@ -193,7 +205,7 @@
       onCollapse={foldSection}
     >
       {#each data.sections.slipped as task (locationKey(task.filePath, task.line))}
-        <TaskRow {task} {ctx} slippedActions />
+        <TaskRow {task} {ctx} slippedActions onToggleSelect={selectToggle('slipped')} />
       {/each}
     </Section>
 
@@ -205,10 +217,10 @@
       emptyText="Nothing scheduled ahead — tasks dated later wait here instead of disappearing"
       onCollapse={foldSection}
       dragActive={dropValid({kind: 'section', key: 'upcoming'})}
-      onDropTask={dropOn({kind: 'section', key: 'upcoming'})}
+      onDropTask={dropHandler('upcoming')}
     >
       {#each data.sections.upcoming as task (locationKey(task.filePath, task.line))}
-        <TaskRow {task} {ctx} />
+        <TaskRow {task} {ctx} onToggleSelect={selectToggle('upcoming')} />
       {/each}
     </Section>
 
@@ -364,7 +376,7 @@
                 showSource={false}
                 selectMode={selecting}
                 {selectedKeys}
-                onToggleSelect={toggleSelect}
+                onToggleSelect={selectToggle('projects')}
               />
             {/each}
           {/if}

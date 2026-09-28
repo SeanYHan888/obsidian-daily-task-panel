@@ -1,12 +1,35 @@
 import {countTaskTree, flattenTaskTree, locationKey} from './hierarchy'
 
-import type {PacingMode, ProjectGroup, ProjectMeta, Sections, Task} from './types'
+import type {PacingMode, ProjectGroup, ProjectMeta, SectionKey, Sections, Task} from './types'
 
 /**
  * Queries over a classified Sections projection — the questions the panel
  * asks after classifySections has answered "what goes where". All pure, all
  * testable through the same fixtures the classify suite already builds.
  */
+
+export type SectionAffordances = {
+  /** Rows can join the selection (To-do with its inbox tail, the Backlogs). */
+  selectable: boolean
+  /** The repair queue: Overdue & slipped carries Start all today. */
+  repairable: boolean
+  /** The Backlogs: New project, Organize by status, the fold pair. */
+  organizable: boolean
+  /** A dropped row lands here: To-do stamps today, Upcoming asks for a date. */
+  droppable: boolean
+}
+
+/**
+ * What each section offers — which rows select, which headers carry which
+ * acts (#15), which sections catch a dropped row — stated once, read by the
+ * menu grammar and the Panel alike.
+ */
+export const sectionAffordances = (key: SectionKey): SectionAffordances => ({
+  selectable: key === 'today' || key === 'inbox' || key === 'projects',
+  repairable: key === 'slipped',
+  organizable: key === 'projects',
+  droppable: key === 'today' || key === 'upcoming',
+})
 
 /** Every task a selection can span: To-do, its inbox tail, and the backlogs. */
 export const selectionSpan = (sections: Sections | null): Task[] =>

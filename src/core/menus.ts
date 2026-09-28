@@ -1,6 +1,7 @@
 import {inFolder} from './classify'
 import {isMachineManaged} from './machine-note'
 import {canMove} from './order'
+import {sectionAffordances} from './sections'
 import {postponeAnchor, resolveQuickDate} from './schedule'
 
 import type {MachineNoteConfig} from './machine-note'
@@ -226,13 +227,6 @@ export const taskMenuSpec = (
   ]
 }
 
-/** Which acts a section header carries is policy (#15): stated here, once. */
-export const sectionCapabilities = (key: SectionKey): Omit<SectionMenuConfig, 'selecting'> => ({
-  selectable: key === 'today' || key === 'projects',
-  repairable: key === 'slipped',
-  organizable: key === 'projects',
-})
-
 export type SectionMenuConfig = {
   /** The one global select mode's current state — either header toggles it. */
   selecting: boolean
@@ -412,7 +406,7 @@ export const menuFor = (request: MenuRequest, ctx: MenuContext): {spec: MenuItem
       return {spec: selectBarMenuSpec(request.tasks, ctx), subject: {kind: 'tasks', tasks: request.tasks}}
     case 'section':
       return {
-        spec: sectionMenuSpec({selecting: request.selecting, ...sectionCapabilities(request.key)}),
+        spec: sectionMenuSpec({selecting: request.selecting, ...sectionAffordances(request.key)}),
         subject: {kind: 'section', key: request.key},
       }
     case 'project': {

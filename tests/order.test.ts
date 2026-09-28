@@ -1,6 +1,6 @@
 import {assert, test} from 'vitest'
 
-import {canMove, canPlace, compareProjects, movableProjects, moveWrites, organizeByStatus, placeWrites, topRank} from '../src/core/order'
+import {canMove, canPlace, compareProjects, movableProjects, moveWrites, organizeByStatus, placeWrites, placementEdge, topRank} from '../src/core/order'
 
 import {projectMenuSpec} from '../src/core/menus'
 
@@ -160,4 +160,17 @@ test('canMove: the ends of the movable band and anything outside it are pinned (
     canMove: canMove(groups, P('waiting')),
   }).filter(e => e.kind === 'item' && e.action.type === 'move' && e.disabled)
   assert.lengthOf(disabled, 4)
+})
+
+test('placementEdge names the side placeWrites lands on, and nothing when a drop changes nothing', () => {
+  const P = (n: string) => `Projects/Active/${n}.md`
+  const list = ['a', 'b', 'c', 'd'].map((n, i) => ({...meta(n), order: i + 1}))
+  assert.equal(placementEdge(list, P('a'), P('c')), 'after')
+  assert.equal(placementEdge(list, P('d'), P('b')), 'before')
+  assert.equal(placementEdge(list, P('c'), P('a')), 'before')
+  assert.equal(placementEdge(list, P('a'), P('a')), null)
+  assert.equal(placementEdge(list, P('zzz'), P('a')), null)
+  // The highlight's side and the write's landing agree: a lands after c, d before b.
+  assert.deepEqual(after(list, placeWrites(list, P('a'), P('c'))), ['b', 'c', 'a', 'd'])
+  assert.deepEqual(after(list, placeWrites(list, P('d'), P('b'))), ['a', 'd', 'b', 'c'])
 })
