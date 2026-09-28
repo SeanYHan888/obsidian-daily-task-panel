@@ -96,6 +96,8 @@ Day Planner's section of the daily note — time blocks, not tasks. Daily Task P
 
 ### Panel grammar
 
+UI copy names the plugin in sentence case — "Daily task panel" in the tab title, the ribbon tooltip and every notice's prefix — because the community-directory scanner's sentence-case rule has no notion of a product name (2026-09-27). The manifest, the command palette (which prints the manifest name) and the docs keep "Daily Task Panel".
+
 **Undo journal**:
 The session's log of line edits (`core/journal.ts`, ADR-0001 upheld: never a store of tasks), bounded at fifty entries, in memory only. Each panel action that changed lines is one entry, shown with an Undo link; undoing takes the entry out of the journal (an old link is fine, the same link twice is "already undone") and reverts its records note by note — notes getting lines back before notes losing them, so an interruption can leave a duplicate but never a lost task — skipping any line that no longer reads what the action left. Undo goes through the line editor like every write (2026-09-27).
 

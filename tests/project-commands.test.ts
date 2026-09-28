@@ -49,7 +49,7 @@ describe('commitStatus', () => {
     const outcome = await commitStatus(store, c, 'now', {sections: sections([]), wipLimit: 3})
     expect(store.writes).toEqual([{path: c.path, patch: {status: 'now', order: 0}}])
     expect(outcome.written).toBe(true)
-    expect(outcome.notice).toBe('Daily Task Panel: c → now')
+    expect(outcome.notice).toBe('Daily task panel: c → now')
   })
 
   it('names the capacity consequence past the limit — from the menu as from the → now button', async () => {
@@ -57,7 +57,7 @@ describe('commitStatus', () => {
     const shown = sections([group(a), group(b)])
     const outcome = await commitStatus(store, c, 'now', {sections: shown, wipLimit: 2})
     expect(outcome.capacity).toEqual({count: 3, over: true})
-    expect(outcome.notice).toBe('Daily Task Panel: c → now — now is full (3/2)')
+    expect(outcome.notice).toBe('Daily task panel: c → now — now is full (3/2)')
   })
 
   it('ranks the lift over every active note, not only the ones on screen', async () => {
@@ -72,7 +72,7 @@ describe('commitStatus', () => {
     const outcome = await commitStatus(store, a, 'later', {sections: sections([]), wipLimit: 3})
     expect(store.writes).toEqual([{path: a.path, patch: {status: 'later'}}])
     expect(outcome.capacity).toBeNull()
-    expect(outcome.notice).toBe('Daily Task Panel: a → later')
+    expect(outcome.notice).toBe('Daily task panel: a → later')
   })
 
   it('reports nothing when the note is gone', async () => {
@@ -119,13 +119,13 @@ describe('order commands', () => {
     const store = fakeProjectStore([later, now])
     const outcome = await organizeProjects(store, 'hybrid')
     expect(outcome.written).toBe(true)
-    expect(outcome.notice).toBe('Daily Task Panel: organized 2 projects by status')
+    expect(outcome.notice).toBe('Daily task panel: organized 2 projects by status')
     expect(store.read().map(p => [p.name, p.order])).toEqual([
       ['later', 2],
       ['now', 1],
     ])
     expect((await organizeProjects(store, 'hybrid')).notice).toBe(
-      'Daily Task Panel: projects already organized by status',
+      'Daily task panel: projects already organized by status',
     )
   })
 })
@@ -137,7 +137,7 @@ describe('setProjectDate', () => {
     const outcome = await setProjectDate(store, p, {field: 'start', date: '2026-10-05'})
     expect(store.writes).toEqual([{path: p.path, patch: {start: '2026-10-05'}}])
     expect(outcome.notice).toBe(
-      'Daily Task Panel: p start → 2026-10-05 — start 10-05 is after deadline 10-01',
+      'Daily task panel: p start → 2026-10-05 — start 10-05 is after deadline 10-01',
     )
   })
 
@@ -146,7 +146,7 @@ describe('setProjectDate', () => {
     const store = fakeProjectStore([p])
     const outcome = await setProjectDate(store, p, {field: 'deadline', date: null})
     expect(store.writes).toEqual([{path: p.path, patch: {deadline: null}}])
-    expect(outcome.notice).toBe('Daily Task Panel: p deadline cleared')
+    expect(outcome.notice).toBe('Daily task panel: p deadline cleared')
     expect(store.read()[0].deadline).toBeNull()
   })
 })

@@ -113,7 +113,7 @@ export const toggleTask = async (app: App, task: Task): Promise<void> => {
 
   const api = getTasksPlugin(app)?.apiV1
   if (!api || typeof api.executeToggleTaskDoneCommand !== 'function') {
-    new Notice('Daily Task Panel: Tasks plugin API unavailable — task not completed')
+    new Notice('Daily task panel: Tasks plugin API unavailable — task not completed')
     return
   }
   let stale = false
@@ -124,5 +124,5 @@ export const toggleTask = async (app: App, task: Task): Promise<void> => {
     stale = result.stale > 0
     return result.data
   })
-  if (stale) new Notice('Daily Task Panel: task moved since last refresh — refreshing instead')
+  if (stale) new Notice('Daily task panel: task moved since last refresh — refreshing instead')
 }

@@ -52,8 +52,8 @@ export const commitStatus = async (
   const outcome = toNow ? promotionOutcome(capacity.sections, capacity.wipLimit) : null
   const notice =
     outcome?.over
-      ? `Daily Task Panel: ${project.name} → now — now is full (${outcome.count}/${capacity.wipLimit})`
-      : `Daily Task Panel: ${project.name} → ${status}`
+      ? `Daily task panel: ${project.name} → now — now is full (${outcome.count}/${capacity.wipLimit})`
+      : `Daily task panel: ${project.name} → ${status}`
   return {written, notice, capacity: outcome}
 }
 
@@ -97,8 +97,8 @@ export const organizeProjects = async (
     written,
     notice:
       writes.length === 0
-        ? 'Daily Task Panel: projects already organized by status'
-        : `Daily Task Panel: organized ${writes.length} project${writes.length === 1 ? '' : 's'} by status`,
+        ? 'Daily task panel: projects already organized by status'
+        : `Daily task panel: organized ${writes.length} project${writes.length === 1 ? '' : 's'} by status`,
   }
 }
 

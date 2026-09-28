@@ -102,7 +102,7 @@ export class PanelView extends ItemView {
   }
 
   getDisplayText(): string {
-    return 'Daily Task Panel'
+    return 'Daily task panel'
   }
 
   getIcon(): string {
@@ -331,7 +331,7 @@ export class PanelView extends ItemView {
   private record(entry: JournalEntry): void {
     this.plugin.pushJournal(entry)
     const fragment = createFragment()
-    fragment.append(`Daily Task Panel: ${entry.label} — `)
+    fragment.append(`Daily task panel: ${entry.label} — `)
     const link = createEl('a', {text: 'Undo'})
     link.addEventListener('click', () => void this.plugin.undo(entry))
     fragment.append(link)

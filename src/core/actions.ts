@@ -84,7 +84,7 @@ const edited = async (ctx: ActionContext, tasks: Task[], edit: TaskEdit): Promis
   const outcome = await ctx.ports.editor.edit(tasks, edit)
   return journaled(
     outcome.entry,
-    outcome.stale > 0 ? [`Daily Task Panel: ${plural(outcome.stale)} moved since last refresh — skipped`] : [],
+    outcome.stale > 0 ? [`Daily task panel: ${plural(outcome.stale)} moved since last refresh — skipped`] : [],
   )
 }
 
@@ -94,25 +94,25 @@ const moveNotices = (outcome: MoveOutcome, direction: 'to-project' | 'send-back'
   if (outcome.target.missing) {
     return [
       direction === 'to-project'
-        ? `Daily Task Panel: project note not found: ${outcome.target.path}`
-        : `Daily Task Panel: today's daily note not found (${outcome.target.path}) — create it first`,
+        ? `Daily task panel: project note not found: ${outcome.target.path}`
+        : `Daily task panel: today's daily note not found (${outcome.target.path}) — create it first`,
     ]
   }
   if (outcome.headingMissing) {
     notices.push(
-      `Daily Task Panel: no "${layout.inboxHeading}" heading in today's daily note — nothing sent back`,
+      `Daily task panel: no "${layout.inboxHeading}" heading in today's daily note — nothing sent back`,
     )
   }
   if (outcome.duplicated > 0) {
     notices.push(
-      `Daily Task Panel: ${plural(outcome.duplicated)} copied but not cut — the ${direction === 'to-project' ? 'source' : 'project'} note changed mid-move; remove the originals by hand`,
+      `Daily task panel: ${plural(outcome.duplicated)} copied but not cut — the ${direction === 'to-project' ? 'source' : 'project'} note changed mid-move; remove the originals by hand`,
     )
   }
   if (outcome.skipped > 0) {
     notices.push(
       direction === 'to-project'
-        ? `Daily Task Panel: ${plural(outcome.skipped)} not moved (changed since selection, or already in the target note)`
-        : `Daily Task Panel: ${plural(outcome.skipped)} not sent back (changed since, or already in today's note)`,
+        ? `Daily task panel: ${plural(outcome.skipped)} not moved (changed since selection, or already in the target note)`
+        : `Daily task panel: ${plural(outcome.skipped)} not sent back (changed since, or already in today's note)`,
     )
   }
   return notices
@@ -251,7 +251,7 @@ const retire = async (
   }
   const archived = await ctx.ports.projects.archive(project.path, status)
   return archived
-    ? noticed(`Daily Task Panel: ${project.name} marked ${status} — archived to ${ctx.layout.archiveFolder}`)
+    ? noticed(`Daily task panel: ${project.name} marked ${status} — archived to ${ctx.layout.archiveFolder}`)
     : NOTHING
 }
 
@@ -277,7 +277,7 @@ const performOnProject = async (
       if (!path) return NOTHING
       return {
         entry: null,
-        notices: [`Daily Task Panel: ${project.name} → ${name}`],
+        notices: [`Daily task panel: ${project.name} → ${name}`],
         effect: {kind: 'project-renamed', from: project.path, to: path},
       }
     }
@@ -294,7 +294,7 @@ const performOnProject = async (
       const outcome = await ctx.ports.editor.addTask(project.path, text)
       return journaled(
         outcome.entry,
-        outcome.target.missing ? [`Daily Task Panel: project note not found: ${outcome.target.path}`] : [],
+        outcome.target.missing ? [`Daily task panel: project note not found: ${outcome.target.path}`] : [],
       )
     }
     case 'promote':
@@ -337,7 +337,7 @@ const performOnSection = async (ctx: ActionContext, action: MenuAction): Promise
       })
       if (!name) return NOTHING
       const path = await ctx.ports.projects.create(name, ctx.today)
-      return path ? noticed(`Daily Task Panel: project ${name} created`) : NOTHING
+      return path ? noticed(`Daily task panel: project ${name} created`) : NOTHING
     }
     case 'reschedule-all': {
       // Start all today, over the last projection: every line is verified

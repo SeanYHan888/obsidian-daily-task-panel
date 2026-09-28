@@ -78,13 +78,13 @@ export const undoNotice = (
 ): string => {
   switch (result.reason) {
     case 'empty':
-      return 'Daily Task Panel: nothing to undo'
+      return 'Daily task panel: nothing to undo'
     case 'already-undone':
-      return 'Daily Task Panel: that action was already undone'
+      return 'Daily task panel: that action was already undone'
     case 'undone':
       return result.stale > 0
-        ? `Daily Task Panel: undid "${result.label}" — ${result.stale} line${result.stale === 1 ? '' : 's'} changed since last refresh — skipped`
-        : `Daily Task Panel: undid "${result.label}"`
+        ? `Daily task panel: undid "${result.label}" — ${result.stale} line${result.stale === 1 ? '' : 's'} changed since last refresh — skipped`
+        : `Daily task panel: undid "${result.label}"`
   }
 }
 

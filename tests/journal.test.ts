@@ -155,11 +155,11 @@ test('take: the latest by default, a named entry from anywhere, and never the sa
 })
 
 test('undo speaks the words it always did', () => {
-  assert.equal(undoNotice({reason: 'empty'}), 'Daily Task Panel: nothing to undo')
-  assert.equal(undoNotice({reason: 'already-undone'}), 'Daily Task Panel: that action was already undone')
-  assert.equal(undoNotice({reason: 'undone', label: 'moved 1 task to p', stale: 0}), 'Daily Task Panel: undid "moved 1 task to p"')
+  assert.equal(undoNotice({reason: 'empty'}), 'Daily task panel: nothing to undo')
+  assert.equal(undoNotice({reason: 'already-undone'}), 'Daily task panel: that action was already undone')
+  assert.equal(undoNotice({reason: 'undone', label: 'moved 1 task to p', stale: 0}), 'Daily task panel: undid "moved 1 task to p"')
   assert.equal(
     undoNotice({reason: 'undone', label: 'cancelled 1 task', stale: 2}),
-    'Daily Task Panel: undid "cancelled 1 task" — 2 lines changed since last refresh — skipped',
+    'Daily task panel: undid "cancelled 1 task" — 2 lines changed since last refresh — skipped',
   )
 })

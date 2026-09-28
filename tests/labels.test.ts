@@ -14,28 +14,28 @@ test('a project date notice names the edit, and the contradiction when the dates
   const project = {name: 'course-part-2', start: null, deadline: null}
   assert.equal(
     projectDateNotice(project, {field: 'start', date: '2026-09-21'}),
-    'Daily Task Panel: course-part-2 start → 2026-09-21',
+    'Daily task panel: course-part-2 start → 2026-09-21',
   )
   assert.equal(
     projectDateNotice({...project, start: '2026-09-21'}, {field: 'start', date: null}),
-    'Daily Task Panel: course-part-2 start cleared',
+    'Daily task panel: course-part-2 start cleared',
   )
   assert.equal(
     projectDateNotice({...project, deadline: '2026-09-27'}, {field: 'start', date: '2026-09-28'}),
-    'Daily Task Panel: course-part-2 start → 2026-09-28 — start 09-28 is after deadline 09-27',
+    'Daily task panel: course-part-2 start → 2026-09-28 — start 09-28 is after deadline 09-27',
   )
   assert.equal(
     projectDateNotice({...project, start: '2026-09-28'}, {field: 'deadline', date: '2026-09-27'}),
-    'Daily Task Panel: course-part-2 deadline → 2026-09-27 — deadline 09-27 is before start 09-28',
+    'Daily task panel: course-part-2 deadline → 2026-09-27 — deadline 09-27 is before start 09-28',
   )
   // The same day is not a contradiction; clearing never is.
   assert.equal(
     projectDateNotice({...project, deadline: '2026-09-27'}, {field: 'start', date: '2026-09-27'}),
-    'Daily Task Panel: course-part-2 start → 2026-09-27',
+    'Daily task panel: course-part-2 start → 2026-09-27',
   )
   assert.equal(
     projectDateNotice({...project, start: '2026-09-28'}, {field: 'deadline', date: null}),
-    'Daily Task Panel: course-part-2 deadline cleared',
+    'Daily task panel: course-part-2 deadline cleared',
   )
 })
 

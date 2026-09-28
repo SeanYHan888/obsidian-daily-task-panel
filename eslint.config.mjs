@@ -1,12 +1,9 @@
-// The same rule set the community-directory submission scanner is built on.
+// The same rule set the community-directory submission scanner runs, with no
+// local overrides, so a clean lint here means a clean scan there. (A brands
+// list once let the plugin's name keep its capitals; the scanner has no such
+// list, so UI copy writes it in sentence case: "Daily task panel".)
 import obsidianmd from 'eslint-plugin-obsidianmd'
-import {DEFAULT_BRANDS} from 'eslint-plugin-obsidianmd/dist/lib/rules/ui/brands.js'
 import tseslint from 'typescript-eslint'
-
-// The plugin's own name (and its former one) are proper nouns, so sentence
-// case keeps their capitals. A `brands` list replaces the rule's defaults
-// rather than adding to them, hence the spread.
-const BRANDS = [...DEFAULT_BRANDS, 'Daily Task Panel', 'Taskflow']
 
 export default tseslint.config(
   ...obsidianmd.configs.recommended,
@@ -17,9 +14,6 @@ export default tseslint.config(
         project: './tsconfig.json',
         tsconfigRootDir: import.meta.dirname,
       },
-    },
-    rules: {
-      'obsidianmd/ui/sentence-case': ['warn', {brands: BRANDS, enforceCamelCaseLower: true}],
     },
   },
   {

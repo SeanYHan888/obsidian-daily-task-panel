@@ -158,7 +158,7 @@
 <div class="dtp-panel" bind:clientWidth={panelWidth}>
   {#if data.setup.includes('tasks-plugin-missing')}
     <div class="dtp-missing">
-      Daily Task Panel needs the Tasks plugin (emoji format) to read your vault's
+      Daily task panel needs the Tasks plugin (emoji format) to read your vault's
       tasks. Install and enable "Tasks" from the community plugins, and the
       panel will pick it up.
     </div>

@@ -26,7 +26,7 @@ export default class DailyTaskPanelPlugin extends Plugin {
 
     this.registerView(VIEW_TYPE, leaf => new PanelView(leaf, this))
     this.addSettingTab(new PanelSettingTab(this.app, this))
-    this.addRibbonIcon('list-checks', 'Open Daily Task Panel', () => void this.activateView())
+    this.addRibbonIcon('list-checks', 'Open daily task panel', () => void this.activateView())
     this.addCommand({
       id: 'open-panel',
       name: 'Open panel',
@@ -54,7 +54,7 @@ export default class DailyTaskPanelPlugin extends Plugin {
     if (legacy != null) {
       await this.saveData(this.settings)
       new Notice(
-        'Daily Task Panel: settings carried over from Taskflow. You can disable and remove the old Taskflow plugin.',
+        'Daily task panel: settings carried over from taskflow. You can disable and remove the old taskflow plugin.',
         12000,
       )
     }
