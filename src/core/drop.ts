@@ -60,7 +60,7 @@ export const dropIntent = (
     return {kind: 'schedule-today'}
   }
   if (target.key === 'upcoming') return {kind: 'ask-date'}
-  // Capture renders inside To-do (2026-08-22 merge), so the Inbox key has no
-  // header to drop on; clearing a date and sending back live in the menu.
+  // The repair queue and the Backlogs catch nothing: clearing a date and
+  // sending back live in the menu.
   return {kind: 'none'}
 }

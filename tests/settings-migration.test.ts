@@ -46,3 +46,8 @@ test('nothing stored reads as no settings', () => {
   assert.deepEqual(migrateSettings(undefined), {})
   assert.deepEqual(migrateSettings('corrupt'), {})
 })
+
+test('a collapse toggle stored for the retired Inbox section is dropped', () => {
+  const migrated = migrateSettings({collapsed: {inbox: true, upcoming: false}})
+  assert.deepEqual(migrated.collapsed, {upcoming: false})
+})

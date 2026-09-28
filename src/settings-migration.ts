@@ -11,6 +11,8 @@ import type {PanelSettings} from './settings'
  *    data.json; the old folder's copy is read once instead. The directory
  *    also has an unrelated plugin with id `taskflow`, so the old file is
  *    taken only when it is recognisably ours.
+ * 3. Inbox stopped being a section of its own on 2026-08-22 (it renders
+ *    inside To-do); a collapse toggle stored under that key is dropped.
  */
 
 /** The previous plugin id — its folder is where pre-rename settings live. */
@@ -39,5 +41,9 @@ export const migrateSettings = (raw: unknown): Partial<PanelSettings> => {
   if (!isRecord(raw)) return {}
   const {appleSyncPath, ...rest} = raw as Stored
   if (appleSyncPath != null && rest.machineNotePath == null) rest.machineNotePath = appleSyncPath
+  if (isRecord(rest.collapsed) && 'inbox' in rest.collapsed) {
+    const {inbox: _retired, ...collapsed} = rest.collapsed as Record<string, boolean>
+    rest.collapsed = collapsed
+  }
   return rest
 }

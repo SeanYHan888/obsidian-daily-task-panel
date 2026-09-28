@@ -68,17 +68,6 @@ test('dropping a task on its own project does nothing', () => {
   )
 })
 
-test('the merged To-do section leaves the inbox key with no drop meaning', () => {
-  assert.deepEqual(
-    dropIntent(dailyTask({scheduled: '2026-08-25'}), {kind: 'section', key: 'inbox'}, CONFIG),
-    {kind: 'none'},
-  )
-  assert.deepEqual(
-    dropIntent(projectTask(), {kind: 'section', key: 'inbox'}, CONFIG),
-    {kind: 'none'},
-  )
-})
-
 test('dropping on Upcoming asks for a date rather than guessing one', () => {
   assert.deepEqual(
     dropIntent(dailyTask(), {kind: 'section', key: 'upcoming'}, CONFIG),

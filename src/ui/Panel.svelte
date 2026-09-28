@@ -189,7 +189,7 @@
           {ctx}
           selectMode={selecting}
           {selectedKeys}
-          onToggleSelect={selectToggle('inbox')}
+          onToggleSelect={selectToggle('today')}
         />
       {/each}
     </Section>

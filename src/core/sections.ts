@@ -25,7 +25,7 @@ export type SectionAffordances = {
  * menu grammar and the Panel alike.
  */
 export const sectionAffordances = (key: SectionKey): SectionAffordances => ({
-  selectable: key === 'today' || key === 'inbox' || key === 'projects',
+  selectable: key === 'today' || key === 'projects',
   repairable: key === 'slipped',
   organizable: key === 'projects',
   droppable: key === 'today' || key === 'upcoming',

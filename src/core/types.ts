@@ -22,7 +22,7 @@ export type Task = HierarchyItem & {
 }
 
 /** The panel's sections, as keys: settings, drop targets and section acts name them. */
-export type SectionKey = 'today' | 'slipped' | 'upcoming' | 'inbox' | 'projects'
+export type SectionKey = 'today' | 'slipped' | 'upcoming' | 'projects'
 
 export type ProjectStatus = 'now' | 'next' | 'later'
 

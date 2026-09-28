@@ -257,7 +257,6 @@ describe('project acts', () => {
 describe('section acts', () => {
   it('which header carries which acts is stated once', () => {
     expect(sectionAffordances('today')).toEqual({selectable: true, repairable: false, organizable: false, droppable: true})
-    expect(sectionAffordances('inbox')).toEqual({selectable: true, repairable: false, organizable: false, droppable: false})
     expect(sectionAffordances('slipped')).toEqual({selectable: false, repairable: true, organizable: false, droppable: false})
     expect(sectionAffordances('upcoming')).toEqual({selectable: false, repairable: false, organizable: false, droppable: true})
     expect(sectionAffordances('projects')).toEqual({selectable: true, repairable: false, organizable: true, droppable: false})
