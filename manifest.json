@@ -1,7 +1,7 @@
 {
 	"id": "daily-task-panel",
 	"name": "Daily Task Panel",
-	"version": "0.5.11",
+	"version": "0.5.12",
 	"minAppVersion": "1.7.2",
 	"description": "Turn daily-note capture into project execution: to-do, overdue and slipped, upcoming, and project backlogs in one sidebar panel.",
 	"author": "Sean Han",
