@@ -1,6 +1,6 @@
 {
   "name": "daily-task-panel",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "description": "Obsidian sidebar panel: daily-note capture to project execution over the Tasks plugin.",
   "main": "main.js",
   "scripts": {
