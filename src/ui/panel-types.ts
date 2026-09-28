@@ -1,9 +1,8 @@
-import type {SectionKey} from '../settings'
 import type {DropTarget} from '../core/drop'
 import type {VaultLayout} from '../core/layout'
-import type {QuickDate} from '../core/schedule'
+import type {MenuAction, MenuRequest, SelectMenuConfig} from '../core/menus'
 import type {SetupMessageKey} from '../core/setup'
-import type {PacingMode, ProjectMeta, Sections, Task} from '../core/types'
+import type {PacingMode, SectionKey, Sections, Subject, Task} from '../core/types'
 
 export type PanelData = {
   sections: Sections | null
@@ -23,11 +22,12 @@ export type PanelData = {
 }
 
 /** What only the row knows when its menu opens (#19): the select state. */
-export type RowMenuState = {
-  /** The row's section has a select mode (To-do, Backlogs). */
-  selectable: boolean
-  selected: boolean
-}
+export type RowMenuState = SelectMenuConfig
+
+/** A lifted row, or a lifted project header (#21) — one drag surface, one verb. */
+export type DropPayload = {kind: 'task'; task: Task} | {kind: 'project'; path: string}
+
+export type FoldTarget = {kind: 'section'; key: SectionKey} | {kind: 'project'; path: string}
 
 /** Everything a task row needs regardless of which section rendered it. */
 export type RowContext = {
@@ -40,40 +40,17 @@ export type RowContext = {
   callbacks: PanelCallbacks
 }
 
+/**
+ * The seam between the panel and its shell: four verbs, each with a data
+ * argument. Buttons and chips speak the same MenuAction the menus emit;
+ * which menu a surface wants is a request the grammar resolves
+ * (core/menus menuFor); a drop carries either payload; a fold names its
+ * target. The event rides along only where the shell needs its position
+ * (a menu) or its modifiers (a jump).
+ */
 export type PanelCallbacks = {
-  onToggleTask: (task: Task) => void
-  /** The MouseEvent carries the open modifiers (mod+click → new tab, etc.). */
-  onOpenTask: (task: Task, ev?: MouseEvent) => void
-  onOpenFile: (path: string, ev?: MouseEvent) => void
-  onCollapse: (key: SectionKey, collapsed: boolean) => void
-  /** Header click: fold, or jump to the note when the open-modifier is held. */
-  onProjectToggle: (path: string, folded: boolean, ev: MouseEvent) => void
-  /** Opens the quick-date menu (today / tomorrow / weekend / pick) at the event. */
-  onScheduleMenu: (task: Task, ev: MouseEvent) => void
-  /** The 📅 chip's menu (#18): pick or remove the due date — never the plan. */
-  onDueMenu: (task: Task, ev: MouseEvent) => void
-  /** The row's context menu: every hover affordance, for right-click and touch. */
-  onRowMenu: (task: Task, ev: MouseEvent, row: RowMenuState) => void
-  onSchedule: (task: Task, kind: QuickDate) => void
-  onPickDate: (task: Task) => void
-  onCancelTask: (task: Task) => void
-  /** A section header's "…" menu; `selecting` labels the toggle-select item. */
-  onSectionMenu: (key: SectionKey, selecting: boolean, ev: MouseEvent) => void
-  /** Triage: open the project picker for the selected inbox tasks. */
-  onBulkMove: (tasks: Task[]) => void
-  onBulkScheduleMenu: (tasks: Task[], ev: MouseEvent) => void
-  /** Narrow panels: the select bar's two buttons folded into one "…" menu. */
-  onBulkActionsMenu: (tasks: Task[], ev: MouseEvent) => void
-  /** A drop names an existing edit; core resolves which one (dropIntent). */
-  onDrop: (task: Task, target: DropTarget, ev: DragEvent) => void
-  /** A project header dropped on another (#21): take its slot (core/order placeWrites). */
-  onReorderProject: (path: string, targetPath: string) => void
-  /** Project lifecycle menu: status now/next/later, done/dropped + archive. */
-  onProjectMenu: (project: ProjectMeta, ev: MouseEvent) => void
-  /** The deadline chip's act — a chip opens what edits it (panel grammar). */
-  onProjectDeadline: (project: ProjectMeta) => void
-  /** The start chip's act (#24): the start picker, by the same rule. */
-  onProjectStart: (project: ProjectMeta) => void
-  /** The pressing loop's one tap: commit a pressing project to `now`. */
-  onPromoteProject: (project: ProjectMeta) => void
+  act: (subject: Subject, action: MenuAction, ev?: MouseEvent) => void
+  menu: (request: MenuRequest, ev: MouseEvent) => void
+  drop: (payload: DropPayload, target: DropTarget, ev: DragEvent) => void
+  fold: (target: FoldTarget, folded: boolean) => void
 }

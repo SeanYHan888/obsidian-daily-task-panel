@@ -1,11 +1,12 @@
 import {inFolder} from './classify'
 import {isMachineManaged} from './machine-note'
+import {canMove} from './order'
 import {postponeAnchor, resolveQuickDate} from './schedule'
 
 import type {MachineNoteConfig} from './machine-note'
 import type {QuickDate, RelativeDate} from './schedule'
 import type {MoveDirection} from './order'
-import type {PacingMode, ProjectMeta, ProjectStatus, SectionKey, Task} from './types'
+import type {PacingMode, ProjectGroup, ProjectMeta, ProjectStatus, SectionKey, Subject, Task} from './types'
 
 /**
  * Menus as data: core decides which items exist, what they say, and what
@@ -376,4 +377,54 @@ export const projectMenuSpec = (
   spec.push(item('Mark done & archive', 'check-circle', {type: 'retire', status: 'done'}))
   spec.push(item('Mark dropped & archive', 'circle-off', {type: 'retire', status: 'dropped'}))
   return spec
+}
+
+/** Which menu a surface asked for: the row, a chip, the select bar, a header. */
+export type MenuRequest =
+  | {kind: 'row'; task: Task; state: SelectMenuConfig}
+  | {kind: 'start'; tasks: Task[]}
+  | {kind: 'due'; task: Task}
+  | {kind: 'selection'; tasks: Task[]}
+  | {kind: 'section'; key: SectionKey; selecting: boolean}
+  | {kind: 'project'; project: ProjectMeta}
+
+/** The menus' slice of the world: the layout's folders and note, the projection's day and groups, the pacing mode. */
+export type MenuContext = ScheduleMenuConfig &
+  MachineNoteConfig & {pacingMode: PacingMode; groups: readonly ProjectGroup[]}
+
+/**
+ * One request in, one menu out — the spec to render and the subject its
+ * items act on. Picking the builder and assembling its config is the
+ * grammar's job, so the shell only renders.
+ */
+export const menuFor = (request: MenuRequest, ctx: MenuContext): {spec: MenuItemSpec[]; subject: Subject} => {
+  switch (request.kind) {
+    case 'row':
+      return {
+        spec: taskMenuSpec(request.task, {...ctx, ...request.state}),
+        subject: {kind: 'tasks', tasks: [request.task]},
+      }
+    case 'start':
+      return {spec: scheduleMenuSpec(request.tasks, ctx), subject: {kind: 'tasks', tasks: request.tasks}}
+    case 'due':
+      return {spec: dueMenuSpec(request.task), subject: {kind: 'tasks', tasks: [request.task]}}
+    case 'selection':
+      return {spec: selectBarMenuSpec(request.tasks, ctx), subject: {kind: 'tasks', tasks: request.tasks}}
+    case 'section':
+      return {
+        spec: sectionMenuSpec({selecting: request.selecting, ...sectionCapabilities(request.key)}),
+        subject: {kind: 'section', key: request.key},
+      }
+    case 'project': {
+      const group = ctx.groups.find(g => g.project.path === request.project.path)
+      return {
+        spec: projectMenuSpec(request.project, {
+          pacingMode: ctx.pacingMode,
+          pressing: group?.pressing ?? false,
+          canMove: canMove(ctx.groups, request.project.path),
+        }),
+        subject: {kind: 'project', project: request.project},
+      }
+    }
+  }
 }

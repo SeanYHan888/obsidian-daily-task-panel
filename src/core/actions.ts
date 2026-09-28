@@ -12,7 +12,9 @@ import type {ProjectDateEdit} from './labels'
 import type {VaultLayout} from './layout'
 import type {MenuAction} from './menus'
 import type {Ports} from './ports'
-import type {PacingMode, ProjectMeta, SectionKey, Sections, Task} from './types'
+import type {PacingMode, ProjectMeta, Sections, Subject, Task} from './types'
+
+export type {Subject} from './types'
 
 /**
  * Panel actions: every act the panel offers, performed as one use case —
@@ -25,11 +27,6 @@ import type {PacingMode, ProjectMeta, SectionKey, Sections, Task} from './types'
  * The clock is the projection's: `today` is the day the panel was last
  * drawn for, so a menu and the act it triggers agree even across midnight.
  */
-
-export type Subject =
-  | {kind: 'tasks'; tasks: Task[]}
-  | {kind: 'project'; project: ProjectMeta}
-  | {kind: 'section'; key: SectionKey}
 
 /** The one way to pick a project or start a new one; the name typed so far rides along. */
 export type ProjectChoice = {kind: 'project'; project: ProjectMeta} | {kind: 'new'; name?: string}

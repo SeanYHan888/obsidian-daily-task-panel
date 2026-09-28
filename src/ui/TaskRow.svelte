@@ -6,7 +6,7 @@
   import {rowAffordances} from '../core/machine-note'
   import {chipLabel, rowChip} from '../core/schedule'
 
-  import type {Task} from '../core/types'
+  import type {Subject, Task} from '../core/types'
   import type {RowContext} from './panel-types'
 
   let {
@@ -40,6 +40,8 @@
   )
   const canSchedule = $derived(aff.canSchedule)
   const selectable = $derived(aff.selectable && onToggleSelect != null)
+  /** This row, as the subject its buttons act on. */
+  const subject: Subject = $derived({kind: 'tasks', tasks: [task]})
   const rowDraggable = $derived(aff.draggable)
   const selected = $derived(
     selectedKeys?.has(locationKey(task.filePath, task.line)) ?? false,
@@ -65,7 +67,7 @@
   ondragend={() => ctx.onDragEnd()}
   oncontextmenu={ev => {
     ev.preventDefault()
-    ctx.callbacks.onRowMenu(task, ev, {selectable: onToggleSelect != null, selected})
+    ctx.callbacks.menu({kind: 'row', task, state: {selectable: onToggleSelect != null, selected}}, ev)
   }}
 >
   {#if selectable && onToggleSelect}
@@ -81,15 +83,15 @@
     <button
       class="dtp-check"
       aria-label="Complete task"
-      onclick={() => ctx.callbacks.onToggleTask(task)}
+      onclick={() => ctx.callbacks.act(subject, {type: 'complete'})}
     ></button>
   {/if}
   <button
     class="dtp-text"
     onclick={ev =>
-      selectable && onToggleSelect ? onToggleSelect(task) : ctx.callbacks.onOpenTask(task, ev)}
+      selectable && onToggleSelect ? onToggleSelect(task) : ctx.callbacks.act(subject, {type: 'open-note'}, ev)}
     onauxclick={ev => {
-      if (ev.button === 1 && !(selectable && onToggleSelect)) ctx.callbacks.onOpenTask(task, ev)
+      if (ev.button === 1 && !(selectable && onToggleSelect)) ctx.callbacks.act(subject, {type: 'open-note'}, ev)
     }}
   >
     <span class="dtp-desc">{task.description}</span>
@@ -110,8 +112,8 @@
         aria-label={chip.field === 'due' ? 'Edit due date' : 'Edit start'}
         onclick={ev =>
           chip.field === 'due'
-            ? ctx.callbacks.onDueMenu(task, ev)
-            : ctx.callbacks.onScheduleMenu(task, ev)}
+            ? ctx.callbacks.menu({kind: 'due', task}, ev)
+            : ctx.callbacks.menu({kind: 'start', tasks: [task]}, ev)}
       >
         {chipText(chip.date)}
       </button>
@@ -129,7 +131,7 @@
     <button
       class="dtp-add-date"
       aria-label="Set start"
-      onclick={ev => ctx.callbacks.onScheduleMenu(task, ev)}
+      onclick={ev => ctx.callbacks.menu({kind: 'start', tasks: [task]}, ev)}
       ondragstart={ev => {
         ev.preventDefault()
         ev.stopPropagation()
@@ -140,22 +142,22 @@
 </div>
 {#if slippedActions && canSchedule}
   <div class="dtp-actions">
-    <button class="dtp-action" onclick={() => ctx.callbacks.onSchedule(task, 'today')}>
+    <button class="dtp-action" onclick={() => ctx.callbacks.act(subject, {type: 'schedule', kind: 'today'})}>
       today
     </button>
-    <button class="dtp-action" onclick={() => ctx.callbacks.onSchedule(task, 'tomorrow')}>
+    <button class="dtp-action" onclick={() => ctx.callbacks.act(subject, {type: 'schedule', kind: 'tomorrow'})}>
       tomorrow
     </button>
     <button
       class="dtp-action"
       aria-label="Pick a date"
-      onclick={() => ctx.callbacks.onPickDate(task)}
+      onclick={() => ctx.callbacks.act(subject, {type: 'pick-date'})}
       use:icon={'calendar'}
     ></button>
     <button
       class="dtp-action dtp-action-danger"
       aria-label="Cancel task"
-      onclick={() => ctx.callbacks.onCancelTask(task)}
+      onclick={() => ctx.callbacks.act(subject, {type: 'cancel'})}
       use:icon={'x'}
     ></button>
   </div>

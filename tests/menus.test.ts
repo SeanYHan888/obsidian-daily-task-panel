@@ -2,6 +2,7 @@ import {assert, test} from 'vitest'
 
 import {
   dueMenuSpec,
+  menuFor,
   projectMenuSpec,
   scheduleMenuSpec,
   sectionMenuSpec,
@@ -340,4 +341,29 @@ test('capacity mode hides the start items with the deadline items (#23)', () => 
   assert.notInclude(wip, 'Clear start')
   const deadline = titles(projectMenuSpec(project({start: '2026-09-21'}), {...HYBRID, pacingMode: 'deadline'}))
   assert.include(deadline, 'Change start date')
+})
+
+test('menuFor: one request in, the spec and its subject out', () => {
+  const ctx = {projectsFolder: 'Projects/Active', today: '2026-09-27', machineNotePath: '', pacingMode: 'hybrid' as const, groups: []}
+  const task = {
+    description: 'x',
+    sourceLine: '- [ ] x',
+    filePath: 'Daily Notes/2026-09-27.md',
+    line: 1,
+    open: true,
+    scheduled: null,
+    due: null,
+    heading: 'Inbox',
+    children: [],
+  }
+  const row = menuFor({kind: 'row', task, state: {selectable: true, selected: false}}, ctx)
+  assert.deepEqual(row.subject, {kind: 'tasks', tasks: [task]})
+  assert.deepEqual(row.spec, taskMenuSpec(task, {...ctx, selectable: true, selected: false}))
+  const section = menuFor({kind: 'section', key: 'slipped', selecting: false}, ctx)
+  assert.deepEqual(section.subject, {kind: 'section', key: 'slipped'})
+  assert.ok(section.spec.some(e => e.kind === 'item' && e.action.type === 'reschedule-all'))
+  const project = {path: 'Projects/Active/p.md', name: 'p', status: 'next' as const, deadline: null, order: null, start: null}
+  const header = menuFor({kind: 'project', project}, ctx)
+  assert.deepEqual(header.subject, {kind: 'project', project})
+  assert.deepEqual(header.spec, projectMenuSpec(project, {pacingMode: 'hybrid', pressing: false, canMove: {up: false, down: false}}))
 })

@@ -7,16 +7,7 @@ import {createPorts, gatherSetupFacts} from './adapters/compose'
 import {performAction, performDrop} from './core/actions'
 import {classifySections} from './core/classify'
 import {EMPTY_LAYOUT} from './core/layout'
-import {
-  dueMenuSpec,
-  projectMenuSpec,
-  scheduleMenuSpec,
-  sectionCapabilities,
-  sectionMenuSpec,
-  selectBarMenuSpec,
-  taskMenuSpec,
-} from './core/menus'
-import {canMove} from './core/order'
+import {menuFor} from './core/menus'
 import {placeProject} from './core/project-commands'
 import {carryFoldToggle, foldToggles} from './core/sections'
 import {setupState} from './core/setup'
@@ -26,11 +17,10 @@ import type {ActionContext, ActionResult, Prompter, Subject} from './core/action
 import type {DropTarget} from './core/drop'
 import type {JournalEntry} from './core/journal'
 import type {VaultLayout} from './core/layout'
-import type {MenuAction, MenuItemSpec} from './core/menus'
+import type {MenuAction, MenuContext, MenuItemSpec, MenuRequest} from './core/menus'
 import type {Ports} from './core/ports'
-import type {QuickDate} from './core/schedule'
-import type {ProjectMeta, SectionKey, Sections, Task} from './core/types'
-import type {PanelData, RowMenuState} from './ui/panel-types'
+import type {SectionKey, Sections, Task} from './core/types'
+import type {PanelCallbacks, PanelData} from './ui/panel-types'
 import type {PanelSettings} from './settings'
 
 export const VIEW_TYPE = 'daily-task-panel'
@@ -121,52 +111,22 @@ export class PanelView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.empty()
-    const tasks = (list: Task[]): Subject => ({kind: 'tasks', tasks: list})
-    const project = (meta: ProjectMeta): Subject => ({kind: 'project', project: meta})
-    this.panel = mount(Panel, {
-      target: this.contentEl,
-      props: {
-        callbacks: {
-          onToggleTask: (task: Task) => void this.perform(tasks([task]), {type: 'complete'}),
-          onOpenTask: (task: Task, ev?: MouseEvent) =>
-            void this.perform(tasks([task]), {type: 'open-note'}, ev),
-          onOpenFile: (path: string, ev?: MouseEvent) => void this.openFile(path, undefined, ev),
-          onCollapse: (key: SectionKey, collapsed: boolean) =>
-            void this.setCollapsed(key, collapsed),
-          onProjectToggle: (path: string, folded: boolean, ev: MouseEvent) =>
-            Keymap.isModEvent(ev)
-              ? void this.openFile(path, undefined, ev)
-              : void this.setProjectCollapsed(path, !folded),
-          onScheduleMenu: (task: Task, ev: MouseEvent) => this.showScheduleMenu([task], ev),
-          onDueMenu: (task: Task, ev: MouseEvent) =>
-            this.runMenu(dueMenuSpec(task), ev, tasks([task])),
-          onRowMenu: (task: Task, ev: MouseEvent, row: RowMenuState) =>
-            this.runMenu(taskMenuSpec(task, {...this.menuConfig(), ...row}), ev, tasks([task])),
-          onSchedule: (task: Task, kind: QuickDate) =>
-            void this.perform(tasks([task]), {type: 'schedule', kind}),
-          onPickDate: (task: Task) => void this.perform(tasks([task]), {type: 'pick-date'}),
-          onCancelTask: (task: Task) => void this.perform(tasks([task]), {type: 'cancel'}),
-          onSectionMenu: (key: SectionKey, selecting: boolean, ev: MouseEvent) =>
-            this.runMenu(sectionMenuSpec({selecting, ...sectionCapabilities(key)}), ev, {
-              kind: 'section',
-              key,
-            }),
-          onBulkMove: (list: Task[]) => void this.perform(tasks(list), {type: 'move-to-project'}),
-          onBulkScheduleMenu: (list: Task[], ev: MouseEvent) => this.showScheduleMenu(list, ev),
-          onBulkActionsMenu: (list: Task[], ev: MouseEvent) =>
-            this.runMenu(selectBarMenuSpec(list, this.menuConfig()), ev, tasks(list)),
-          onDrop: (task: Task, target: DropTarget, ev: DragEvent) =>
-            void this.drop(task, target, ev),
-          onReorderProject: (path: string, targetPath: string) =>
-            void placeProject(this.ports.projects, this.lastSections?.projects ?? [], path, targetPath),
-          onProjectMenu: (meta: ProjectMeta, ev: MouseEvent) => this.showProjectMenu(meta, ev),
-          onProjectDeadline: (meta: ProjectMeta) =>
-            void this.perform(project(meta), {type: 'pick-deadline'}),
-          onProjectStart: (meta: ProjectMeta) => void this.perform(project(meta), {type: 'pick-start'}),
-          onPromoteProject: (meta: ProjectMeta) => void this.perform(project(meta), {type: 'promote'}),
-        },
+    // The four verbs of the panel seam (ui/panel-types.ts): act, menu, drop, fold.
+    const callbacks: PanelCallbacks = {
+      act: (subject, action, ev) => void this.perform(subject, action, ev),
+      menu: (request, ev) => this.showMenu(request, ev),
+      drop: (payload, target, ev) => {
+        if (payload.kind === 'task') void this.drop(payload.task, target, ev)
+        // A header landing on a header is a reorder, never a task move.
+        else if (target.kind === 'project')
+          void placeProject(this.ports.projects, this.lastSections?.projects ?? [], payload.path, target.path)
       },
-    }) as unknown as PanelHandle
+      fold: (target, folded) =>
+        target.kind === 'section'
+          ? void this.setCollapsed(target.key, folded)
+          : void this.setProjectCollapsed(target.path, folded),
+    }
+    this.panel = mount(Panel, {target: this.contentEl, props: {callbacks}}) as unknown as PanelHandle
 
     // Each source owns its own change signal: task lines from the task
     // source, project frontmatter and the folder's shape from the project
@@ -285,12 +245,22 @@ export class PanelView extends ItemView {
     }
   }
 
-  /** The menu builders' slice: the layout plus the projection's day. */
-  private menuConfig() {
-    return {...this.lastLayout, today: this.lastToday}
+  /** The menus' slice: the layout, the projection's day and groups, the pacing mode. */
+  private menuContext(): MenuContext {
+    return {
+      ...this.lastLayout,
+      today: this.lastToday,
+      pacingMode: this.plugin.settings.pacingMode,
+      groups: this.lastSections?.projects ?? [],
+    }
   }
 
-  /** Turns a core menu spec into an Obsidian Menu at the event's position; a click performs. */
+  /** The grammar resolves the request; this renders it as an Obsidian Menu at the event; a click performs. */
+  private showMenu(request: MenuRequest, ev: MouseEvent): void {
+    const {spec, subject} = menuFor(request, this.menuContext())
+    this.runMenu(spec, ev, subject)
+  }
+
   private runMenu(spec: MenuItemSpec[], ev: MouseEvent, subject: Subject): void {
     const menu = new Menu()
     for (const entry of spec) {
@@ -307,21 +277,6 @@ export class PanelView extends ItemView {
       }
     }
     menu.showAtMouseEvent(ev)
-  }
-
-  private showScheduleMenu(tasks: Task[], ev: MouseEvent): void {
-    this.runMenu(scheduleMenuSpec(tasks, this.menuConfig()), ev, {kind: 'tasks', tasks})
-  }
-
-  private showProjectMenu(project: ProjectMeta, ev: MouseEvent): void {
-    const groups = this.lastSections?.projects ?? []
-    const group = groups.find(g => g.project.path === project.path)
-    const spec = projectMenuSpec(project, {
-      pacingMode: this.plugin.settings.pacingMode,
-      pressing: group?.pressing ?? false,
-      canMove: canMove(groups, project.path),
-    })
-    this.runMenu(spec, ev, {kind: 'project', project})
   }
 
   private async perform(subject: Subject, action: MenuAction, ev?: MouseEvent): Promise<void> {
@@ -367,7 +322,7 @@ export class PanelView extends ItemView {
         })
         break
       case 'schedule-menu':
-        if (ev) this.showScheduleMenu(effect.tasks, ev)
+        if (ev) this.showMenu({kind: 'start', tasks: effect.tasks}, ev)
         break
     }
   }

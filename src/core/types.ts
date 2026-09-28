@@ -42,6 +42,12 @@ export type ProjectMeta = {
   start: string | null
 }
 
+/** What an act is performed on: a task list, a project, or a section. */
+export type Subject =
+  | {kind: 'tasks'; tasks: Task[]}
+  | {kind: 'project'; project: ProjectMeta}
+  | {kind: 'section'; key: SectionKey}
+
 /** The frontmatter keys the panel writes (ADR-0004's list); null clears a key. */
 export type ProjectPatch = {
   status?: ProjectStatus

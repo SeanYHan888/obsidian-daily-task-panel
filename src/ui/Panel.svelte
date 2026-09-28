@@ -1,4 +1,6 @@
 <script lang="ts">
+  import {Keymap} from 'obsidian'
+
   import Section from './Section.svelte'
   import TaskRow from './TaskRow.svelte'
   import {stillInside} from './dnd'
@@ -11,7 +13,7 @@
   import {projectFolded, pruneSelection, sectionCounts, selectionTasks, wipBadge} from '../core/sections'
 
   import type {DropTarget} from '../core/drop'
-  import type {Task} from '../core/types'
+  import type {SectionKey, Task} from '../core/types'
   import type {PanelCallbacks, PanelData, RowContext} from './panel-types'
 
   let {callbacks}: {callbacks: PanelCallbacks} = $props()
@@ -41,7 +43,7 @@
 
   const dropOn = (target: DropTarget) => (ev: DragEvent) => {
     if (!dragTask) return
-    callbacks.onDrop(dragTask, target, ev)
+    callbacks.drop({kind: 'task', task: dragTask}, target, ev)
     dragTask = null
   }
 
@@ -108,6 +110,9 @@
 
   const counts = $derived(sectionCounts(data.sections))
 
+  const foldSection = (key: SectionKey, collapsed: boolean) =>
+    callbacks.fold({kind: 'section', key}, collapsed)
+
   const ctx: RowContext = $derived({
     today: data.today,
     machineNotePath: data.layout.machineNotePath,
@@ -152,8 +157,8 @@
       count={counts.today + counts.inbox}
       collapsed={data.collapsed.today ?? false}
       emptyText={todoEmpty}
-      onMenu={ev => callbacks.onSectionMenu('today', selecting, ev)}
-      onCollapse={callbacks.onCollapse}
+      onMenu={ev => callbacks.menu({kind: 'section', key: 'today', selecting}, ev)}
+      onCollapse={foldSection}
       dragActive={dropValid({kind: 'section', key: 'today'})}
       onDropTask={dropOn({kind: 'section', key: 'today'})}
     >
@@ -184,8 +189,8 @@
       collapsed={data.collapsed.slipped ?? false}
       danger
       emptyText="All caught up — nothing slipped"
-      onMenu={ev => callbacks.onSectionMenu('slipped', selecting, ev)}
-      onCollapse={callbacks.onCollapse}
+      onMenu={ev => callbacks.menu({kind: 'section', key: 'slipped', selecting}, ev)}
+      onCollapse={foldSection}
     >
       {#each data.sections.slipped as task (locationKey(task.filePath, task.line))}
         <TaskRow {task} {ctx} slippedActions />
@@ -198,7 +203,7 @@
       count={counts.upcoming}
       collapsed={data.collapsed.upcoming ?? true}
       emptyText="Nothing scheduled ahead — tasks dated later wait here instead of disappearing"
-      onCollapse={callbacks.onCollapse}
+      onCollapse={foldSection}
       dragActive={dropValid({kind: 'section', key: 'upcoming'})}
       onDropTask={dropOn({kind: 'section', key: 'upcoming'})}
     >
@@ -215,9 +220,9 @@
       emptyText={projectsEmpty}
       badge={wip?.label ?? null}
       badgeDanger={wip?.danger ?? false}
-      onMenu={ev => callbacks.onSectionMenu('projects', selecting, ev)}
+      onMenu={ev => callbacks.menu({kind: 'section', key: 'projects', selecting}, ev)}
       menuWhenEmpty
-      onCollapse={callbacks.onCollapse}
+      onCollapse={foldSection}
     >
       {#each data.sections.projects as group (group.project.path)}
         {@const folded = projectFolded(data.collapsedProjects, group)}
@@ -247,7 +252,7 @@
             dragOverProject = null
             if (dragProject != null) {
               // A header landing on a header is a reorder, never a task move.
-              callbacks.onReorderProject(dragProject, group.project.path)
+              callbacks.drop({kind: 'project', path: dragProject}, {kind: 'project', path: group.project.path}, ev)
               dragProject = null
               return
             }
@@ -274,7 +279,7 @@
             }}
             oncontextmenu={ev => {
               ev.preventDefault()
-              callbacks.onProjectMenu(group.project, ev)
+              callbacks.menu({kind: 'project', project: group.project}, ev)
             }}
           >
             <!-- Group headers fold, like section headers and every tree since
@@ -283,9 +288,12 @@
             <button
               class="dtp-project-toggle"
               aria-expanded={!folded}
-              onclick={ev => callbacks.onProjectToggle(group.project.path, folded, ev)}
+              onclick={ev =>
+                Keymap.isModEvent(ev)
+                  ? callbacks.act({kind: 'project', project: group.project}, {type: 'open-note'}, ev)
+                  : callbacks.fold({kind: 'project', path: group.project.path}, !folded)}
               onauxclick={ev => {
-                if (ev.button === 1) callbacks.onOpenFile(group.project.path, ev)
+                if (ev.button === 1) callbacks.act({kind: 'project', project: group.project}, {type: 'open-note'}, ev)
               }}
             >
               <span
@@ -311,7 +319,7 @@
               <button
                 class="dtp-quick-action"
                 aria-label="Move to now"
-                onclick={() => callbacks.onPromoteProject(group.project)}
+                onclick={() => callbacks.act({kind: 'project', project: group.project}, {type: 'promote'})}
               >
                 → now
               </button>
@@ -319,7 +327,7 @@
             <button
               class="dtp-project-menu"
               aria-label="Project actions"
-              onclick={ev => callbacks.onProjectMenu(group.project, ev)}
+              onclick={ev => callbacks.menu({kind: 'project', project: group.project}, ev)}
               use:icon={'more-horizontal'}
             ></button>
             <!-- Last, past the hover-revealed buttons, so at rest the chip
@@ -333,7 +341,7 @@
               <button
                 class="dtp-chip dtp-chip-button dtp-chip-start"
                 aria-label="Project start"
-                onclick={() => callbacks.onProjectStart(group.project)}
+                onclick={() => callbacks.act({kind: 'project', project: group.project}, {type: 'pick-start'})}
               >
                 starts {group.project.start.slice(5)}
               </button>
@@ -342,7 +350,7 @@
                 class="dtp-chip dtp-chip-button dtp-chip-due"
                 class:dtp-chip-past={group.urgency === 'arrived'}
                 aria-label="Project deadline"
-                onclick={() => callbacks.onProjectDeadline(group.project)}
+                onclick={() => callbacks.act({kind: 'project', project: group.project}, {type: 'pick-deadline'})}
               >
                 {chipLabel(group.project.deadline, data.today)}
               </button>
@@ -378,7 +386,7 @@
           <button
             class="dtp-action"
             disabled={selectedTasks.length === 0}
-            onclick={() => callbacks.onBulkMove(selectedTasks)}
+            onclick={() => callbacks.act({kind: 'tasks', tasks: selectedTasks}, {type: 'move-to-project'})}
           >
             <span aria-hidden="true" use:icon={'folder-input'}></span>
             move to project
@@ -386,7 +394,7 @@
           <button
             class="dtp-action"
             disabled={selectedTasks.length === 0}
-            onclick={ev => callbacks.onBulkScheduleMenu(selectedTasks, ev)}
+            onclick={ev => callbacks.menu({kind: 'start', tasks: selectedTasks}, ev)}
           >
             <span aria-hidden="true" use:icon={'clock'}></span>
             set start
@@ -398,7 +406,7 @@
             class="dtp-action"
             aria-label="Selection actions"
             disabled={selectedTasks.length === 0}
-            onclick={ev => callbacks.onBulkActionsMenu(selectedTasks, ev)}
+            onclick={ev => callbacks.menu({kind: 'selection', tasks: selectedTasks}, ev)}
             use:icon={'more-horizontal'}
           ></button>
         {/if}
