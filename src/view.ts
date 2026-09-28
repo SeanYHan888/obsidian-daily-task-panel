@@ -3,7 +3,7 @@ import {mount, unmount} from 'svelte'
 
 import Panel from './ui/Panel.svelte'
 import {obsidianPrompter} from './ui/prompts'
-import {createPorts, gatherSetupFacts} from './adapters/compose'
+import {gatherSetupFacts} from './adapters/compose'
 import {performAction, performDrop} from './core/actions'
 import {classifySections} from './core/classify'
 import {EMPTY_LAYOUT} from './core/layout'
@@ -39,6 +39,8 @@ type PanelHandle = {
  */
 export type PanelServices = {
   readonly settings: PanelSettings
+  /** The plugin's object graph, one per plugin (ADR-0004). */
+  readonly ports: Ports
   /** A setting the projection depends on: saved, then every view reprojects. */
   updateSettings(updates: Partial<PanelSettings>): Promise<void>
   /** Collapse and fold state: saved, then every view repaints — no vault read. */
@@ -69,7 +71,6 @@ export class PanelView extends ItemView {
   private lastData: PanelData | null = null
   /** A projection was asked for while the panel was hidden; it runs on reveal. */
   private staleWhileHidden = false
-  private portsCache: Ports | null = null
   private prompterCache: Prompter | null = null
   /**
    * The projection scheduler: every trigger — the task source's signal, a
@@ -88,9 +89,8 @@ export class PanelView extends ItemView {
     super(leaf)
   }
 
-  /** The composition root's object graph, wired once per view. */
   private get ports(): Ports {
-    return (this.portsCache ??= createPorts(this.app, () => this.plugin.settings))
+    return this.plugin.ports
   }
 
   private get prompter(): Prompter {

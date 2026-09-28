@@ -1,7 +1,13 @@
 import {TFolder, normalizePath} from 'obsidian'
 
 import {dailyNotesConfig, resolveLayout} from './layout'
-import {addTaskToProject, editTasks, moveTasksToProject, sendTasksBackToInbox} from './line-editor'
+import {
+  addTaskToProject,
+  editTasks,
+  moveTasksToProject,
+  sendTasksBackToInbox,
+  undoEntry,
+} from './line-editor'
 import {
   archiveProject,
   createProjectFromTemplate,
@@ -74,6 +80,7 @@ export const createPorts = (app: App, settings: () => PanelSettings): Ports => {
       sendBackToInbox: (tasks, today) => sendTasksBackToInbox(app, tasks, layout(), today),
       addTask: (projectPath, text) =>
         addTaskToProject(app, projectPath, text, layout().moveTargetHeading),
+      undo: entry => undoEntry(app, entry),
     },
   }
 }

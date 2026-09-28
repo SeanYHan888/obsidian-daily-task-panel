@@ -1,7 +1,7 @@
 import {TFile} from 'obsidian'
 
 import {todayDailyNotePath} from './layout'
-import {toJournalEntry} from '../core/journal'
+import {toJournalEntry, undoPlan, undoRecordsInFile} from '../core/journal'
 import {plural, sourceLabel} from '../core/labels'
 import {newTaskBlock} from '../core/move'
 import {
@@ -14,7 +14,7 @@ import {
 } from '../core/note-edit'
 
 import type {App} from 'obsidian'
-import type {JournalEntry, LineRecord} from '../core/journal'
+import type {JournalEntry, LineRecord, UndoOutcome} from '../core/journal'
 import type {VaultLayout} from '../core/layout'
 import type {TaskEdit} from '../core/note-edit'
 import type {AddOutcome, EditOutcome, MoveOutcome} from '../core/ports'
@@ -188,4 +188,20 @@ export const addTaskToProject = async (
   })
   target.missing = !found
   return {entry, target}
+}
+
+/** Undo: the plan says which notes and in what order; each is one pure step. */
+export const undoEntry = async (app: App, entry: JournalEntry): Promise<UndoOutcome> => {
+  let reverted = 0
+  let stale = 0
+  for (const {path, records} of undoPlan(entry)) {
+    const found = await processNote(app, path, data => {
+      const result = undoRecordsInFile(data.split('\n'), records)
+      reverted += result.reverted
+      stale += result.stale
+      return result.lines.join('\n')
+    })
+    if (!found) stale += records.length
+  }
+  return {reverted, stale}
 }

@@ -23,6 +23,71 @@ export type JournalEntry = {
 export const toJournalEntry = (label: string, records: LineRecord[]): JournalEntry | null =>
   records.length > 0 ? {label, records} : null
 
+/** How many actions the session remembers; older ones fall off the bottom. */
+export const JOURNAL_DEPTH = 50
+
+export type Journal = readonly JournalEntry[]
+
+/** Records an action; the oldest entry leaves once the journal is full. */
+export const pushEntry = (journal: Journal, entry: JournalEntry, depth = JOURNAL_DEPTH): JournalEntry[] =>
+  [...journal, entry].slice(-depth)
+
+export type Taken =
+  | {reason: 'taken'; journal: JournalEntry[]; entry: JournalEntry}
+  | {reason: 'empty' | 'already-undone'; journal: JournalEntry[]; entry: null}
+
+/**
+ * Takes the entry to undo out of the journal: the one asked for (a notice's
+ * own Undo link, which may be old), else the latest. An entry no longer in
+ * the journal was already undone — a second click on the same link.
+ */
+export const takeEntry = (journal: Journal, entry?: JournalEntry): Taken => {
+  const target = entry ?? journal[journal.length - 1]
+  if (!target) return {reason: 'empty', journal: [...journal], entry: null}
+  const index = journal.lastIndexOf(target)
+  if (index === -1) return {reason: 'already-undone', journal: [...journal], entry: null}
+  return {reason: 'taken', journal: journal.filter((_, i) => i !== index), entry: target}
+}
+
+export type UndoPlan = {path: string; records: LineRecord[]}[]
+
+/**
+ * One entry's records grouped per note, in the order that mirrors the
+ * forward move's duplicate-safe ordering in reverse: notes getting lines
+ * back (undone removals) before notes losing them (undone inserts), so an
+ * interruption can leave a duplicate but never a lost task.
+ */
+export const undoPlan = (entry: JournalEntry): UndoPlan => {
+  const byFile = new Map<string, LineRecord[]>()
+  for (const record of entry.records) {
+    const list = byFile.get(record.file)
+    if (list) list.push(record)
+    else byFile.set(record.file, [record])
+  }
+  const rank = (records: LineRecord[]) => (records.some(r => r.kind === 'remove') ? 0 : 1)
+  return [...byFile.entries()]
+    .map(([path, records]) => ({path, records}))
+    .sort((a, b) => rank(a.records) - rank(b.records))
+}
+
+export type UndoOutcome = {reverted: number; stale: number}
+
+/** What undo has to say, in the words the notice always used. */
+export const undoNotice = (
+  result: {reason: 'empty'} | {reason: 'already-undone'} | {reason: 'undone'; label: string; stale: number},
+): string => {
+  switch (result.reason) {
+    case 'empty':
+      return 'Daily Task Panel: nothing to undo'
+    case 'already-undone':
+      return 'Daily Task Panel: that action was already undone'
+    case 'undone':
+      return result.stale > 0
+        ? `Daily Task Panel: undid "${result.label}" — ${result.stale} line${result.stale === 1 ? '' : 's'} changed since last refresh — skipped`
+        : `Daily Task Panel: undid "${result.label}"`
+  }
+}
+
 export type UndoFileResult = {lines: string[]; reverted: number; stale: number}
 
 /**

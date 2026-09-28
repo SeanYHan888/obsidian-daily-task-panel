@@ -96,6 +96,9 @@ Day Planner's section of the daily note — time blocks, not tasks. Daily Task P
 
 ### Panel grammar
 
+**Undo journal**:
+The session's log of line edits (`core/journal.ts`, ADR-0001 upheld: never a store of tasks), bounded at fifty entries, in memory only. Each panel action that changed lines is one entry, shown with an Undo link; undoing takes the entry out of the journal (an old link is fine, the same link twice is "already undone") and reverts its records note by note — notes getting lines back before notes losing them, so an interruption can leave a duplicate but never a lost task — skipping any line that no longer reads what the action left. Undo goes through the line editor like every write (2026-09-27).
+
 **Note edit**:
 A task-line write as text in, text out (`core/note-edit.ts`): verify-and-replace (each line must still read what was selected — a stale line is skipped, never guessed at), land blocks under a heading, and cut blocks only if the note still reads as the snapshot the cut was planned from (a changed note keeps its lines: a duplicate to clean up, never a lost task). Line endings and the journal records undo relies on are made here. The line editor adapter is the file lookup around these steps; a `TaskEdit` names each per-line edit and its label from one value (2026-09-27).
 

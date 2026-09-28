@@ -1,4 +1,4 @@
-import type {JournalEntry} from './journal'
+import type {JournalEntry, UndoOutcome} from './journal'
 import type {VaultLayout} from './layout'
 import type {TaskEdit} from './note-edit'
 import type {ProjectMeta, ProjectPatch, Task} from './types'
@@ -85,6 +85,8 @@ export type LineEditor = {
   sendBackToInbox(tasks: Task[], today: string): Promise<MoveOutcome>
   /** Appends one new task line under the project's move-target heading. */
   addTask(projectPath: string, text: string): Promise<AddOutcome>
+  /** Reverts one journal entry, note by note in the plan's order (core/journal undoPlan). */
+  undo(entry: JournalEntry): Promise<UndoOutcome>
 }
 
 export type Ports = {

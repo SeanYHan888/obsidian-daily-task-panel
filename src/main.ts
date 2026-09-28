@@ -1,19 +1,25 @@
 import {Notice, Plugin, normalizePath} from 'obsidian'
 
-import {undoEntry} from './adapters/undo'
+import {createPorts} from './adapters/compose'
+import {pushEntry, takeEntry, undoNotice} from './core/journal'
 import {DEFAULT_SETTINGS, PanelSettingTab} from './settings'
 import {LEGACY_PLUGIN_ID, isOwnLegacyData, migrateSettings} from './settings-migration'
 import {VIEW_TYPE, PanelView} from './view'
 
 import type {JournalEntry} from './core/journal'
+import type {Ports} from './core/ports'
 import type {PanelSettings} from './settings'
-
-const JOURNAL_DEPTH = 50
 
 export default class DailyTaskPanelPlugin extends Plugin {
   settings: PanelSettings = {...DEFAULT_SETTINGS}
-  /** Session undo journal (ADR-0001): a log of edits, in memory only. */
+  /** Session undo journal (ADR-0001): a log of edits, in memory only; core keeps its rules. */
   private journal: JournalEntry[] = []
+  private portsCache: Ports | null = null
+
+  /** The composition root's object graph (ADR-0004): wired once per plugin, shared by every view. */
+  get ports(): Ports {
+    return (this.portsCache ??= createPorts(this.app, () => this.settings))
+  }
 
   async onload(): Promise<void> {
     await this.loadSettings()
@@ -67,29 +73,19 @@ export default class DailyTaskPanelPlugin extends Plugin {
   }
 
   pushJournal(entry: JournalEntry): void {
-    this.journal.push(entry)
-    if (this.journal.length > JOURNAL_DEPTH) this.journal.shift()
+    this.journal = pushEntry(this.journal, entry)
   }
 
   /** Undoes the given entry (an undo notice's own action), or the latest one. */
   async undo(entry?: JournalEntry): Promise<void> {
-    const target = entry ?? this.journal[this.journal.length - 1]
-    if (!target) {
-      new Notice('Daily Task Panel: nothing to undo')
+    const taken = takeEntry(this.journal, entry)
+    this.journal = taken.journal
+    if (taken.entry == null) {
+      new Notice(undoNotice({reason: taken.reason}))
       return
     }
-    const index = this.journal.lastIndexOf(target)
-    if (index === -1) {
-      new Notice('Daily Task Panel: that action was already undone')
-      return
-    }
-    this.journal.splice(index, 1)
-    const {stale} = await undoEntry(this.app, target)
-    new Notice(
-      stale > 0
-        ? `Daily Task Panel: undid "${target.label}" — ${stale} line${stale === 1 ? '' : 's'} changed since last refresh — skipped`
-        : `Daily Task Panel: undid "${target.label}"`,
-    )
+    const {stale} = await this.ports.editor.undo(taken.entry)
+    new Notice(undoNotice({reason: 'undone', label: taken.entry.label, stale}))
     // The lines just changed; the task source's signal reprojects every view.
   }
 

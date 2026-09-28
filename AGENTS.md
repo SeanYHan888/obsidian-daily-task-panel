@@ -30,7 +30,7 @@ Read `CONTEXT.md` (glossary — use its vocabulary) and `docs/adr/` before worki
 
 ## Tech stack
 
-TypeScript 5 (strict) + Svelte 5 (runes) + esbuild + Vitest. See ADR-0002. The brain is framework-free: `src/core/` is pure TS (classification, date rules, line moves, menu specs, section queries, setup state) with zero Svelte/Obsidian imports, and declares the three ports it consumes (`core/ports.ts`: task source, project store, line editor — see ADR-0004). `src/adapters/` implements them (`adapters/compose.ts` does the wiring; Tasks-plugin internals live only in `adapters/tasks-plugin.ts`); `src/view.ts` is the composition root; `src/ui/` is thin Svelte. New capabilities arrive as core functions plus port methods, never as view-layer logic.
+TypeScript 5 (strict) + Svelte 5 (runes) + esbuild + Vitest. See ADR-0002. The brain is framework-free: `src/core/` is pure TS (classification, date rules, line moves, menu specs, section queries, setup state) with zero Svelte/Obsidian imports, and declares the three ports it consumes (`core/ports.ts`: task source, project store, line editor — see ADR-0004). `src/adapters/` implements them (`adapters/compose.ts` does the wiring; Tasks-plugin internals live only in `adapters/tasks-plugin.ts`); `src/main.ts` is the composition root (the ports are wired once per plugin and shared by every view); `src/view.ts` is the shell (mount, project, render menus, apply UI effects — every act is performed in `core/actions.ts`); `src/ui/` is thin Svelte. New capabilities arrive as core functions plus port methods, never as view-layer logic.
 
 ## Roadmap (each version ships usable; tracked as GitHub issues)
 

@@ -73,6 +73,10 @@ export const fakeEditor = (): FakeEditor => {
         target: {path: 'Daily Notes/today.md', missing: false},
       })
     },
+    undo: entry => {
+      editor.calls.push({op: 'undo', tasks: [], args: [entry.label]})
+      return Promise.resolve({reverted: entry.records.length, stale: 0})
+    },
     addTask: (projectPath, text) => {
       editor.calls.push({op: 'addTask', tasks: [], args: [projectPath, text]})
       return Promise.resolve({
