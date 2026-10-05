@@ -36,6 +36,56 @@ const classify = (
 
 const descriptions = (tasks: Task[]) => tasks.map(t => t.description)
 
+test('undated managed reminders share the To-do inbox tail with daily captures', () => {
+  const reminder = task({
+    description: 'Call the repair shop',
+    filePath: CONFIG.machineNotePath,
+    heading: 'Apple Reminders',
+  })
+  const capture = task({description: 'daily capture', heading: 'Inbox'})
+  const sections = classify([reminder, capture])
+
+  assert.deepEqual(descriptions(sections.inbox), ['Call the repair shop', 'daily capture'])
+  assert.deepEqual(sections.inbox[0], reminder, 'projection preserves the source task and dates')
+  assert.deepEqual(sections.today, [])
+  assert.deepEqual(sections.slipped, [])
+  assert.deepEqual(sections.upcoming, [])
+})
+
+test('undated reminders use the configured managed path, independently of headings', () => {
+  const managedPath = 'Imports/Reminders.md'
+  const reminder = task({filePath: managedPath, heading: null})
+  const unrelated = task({filePath: 'Areas/Other.md', heading: 'Apple Reminders'})
+  const oldPath = task({filePath: CONFIG.machineNotePath, heading: 'Apple Reminders'})
+
+  assert.deepEqual(
+    classify([reminder, unrelated, oldPath], [], {machineNotePath: managedPath}).inbox,
+    [reminder],
+  )
+  assert.deepEqual(classify([reminder, unrelated, oldPath], [], {machineNotePath: ''}).inbox, [])
+})
+
+test('managed reminder dates keep their sections; completed, blank and calendar rows stay hidden', () => {
+  const managed = (overrides: Partial<Task>) => task({filePath: CONFIG.machineNotePath, ...overrides})
+  const sections = classify([
+    managed({description: 'undated'}),
+    managed({description: 'due today', due: CONFIG.today}),
+    managed({description: 'overdue', due: '2026-08-20'}),
+    managed({description: 'future', due: '2026-08-22'}),
+    managed({description: 'completed', open: false}),
+    managed({description: '   '}),
+    ...['2026-08-20', CONFIG.today, '2026-08-22'].map(scheduled =>
+      managed({description: 'calendar block', scheduled}),
+    ),
+  ])
+
+  assert.deepEqual(descriptions(sections.inbox), ['undated'])
+  assert.deepEqual(descriptions(sections.today), ['due today'])
+  assert.deepEqual(descriptions(sections.slipped), ['overdue'])
+  assert.deepEqual(descriptions(sections.upcoming), ['future'])
+  assert.deepEqual(sections.projects, [])
+})
+
 test('today holds open tasks scheduled or due today, from any note', () => {
   const scheduledToday = task({
     description: 'scheduled today',

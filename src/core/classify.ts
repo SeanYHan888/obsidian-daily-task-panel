@@ -1,5 +1,5 @@
 import {buildTaskTree} from './hierarchy'
-import {isCalendarBlock} from './machine-note'
+import {isCalendarBlock, isMachineManaged} from './machine-note'
 import {normalizeHeading} from './move'
 import {compareProjects, compareUnstarted} from './order'
 import {addDays} from './schedule'
@@ -65,8 +65,12 @@ export const classifySections = (
 
   const today = visible.filter(isToday)
 
+  // Undated synced reminders also belong in To-do. They keep their managed
+  // source and check-off-only affordances; daily capture rules stay separate.
   const inbox = visible
-    .filter(t => isInboxCapture(t, config))
+    .filter(t => isInboxCapture(t, config) || (
+      isMachineManaged(t.filePath, config) && t.scheduled == null && t.due == null
+    ))
     .sort((a, b) => b.filePath.localeCompare(a.filePath) || a.line - b.line)
 
   const slippedDate = (t: Task) => t.due ?? t.scheduled ?? ''
