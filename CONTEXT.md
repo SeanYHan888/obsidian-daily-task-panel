@@ -19,7 +19,7 @@ A real external deadline. Rare; mostly arrives via Apple Reminders sync or is ty
 _Avoid_: deadline (in code/UI — the emoji vocabulary is Tasks-plugin canon)
 
 **Undated**:
-A task with neither scheduled nor due date. Undated means untriaged (in a daily note) or backlog (in a project note).
+A task with neither scheduled nor due date. Undated means untriaged (in a daily note), backlog (in a project note), or a reminder without a deadline (in the machine-managed note).
 
 **Slipped**:
 A task whose scheduled day has passed without completion. A slipped calendar block from the Apple Sync note is not slipped — a missed calendar event is not a debt.
@@ -31,14 +31,14 @@ A task whose due date has passed. Always a debt, even in the Apple Sync note.
 ### Sections (the panel's projections)
 
 **To-do**:
-The panel's first section: open tasks scheduled or due today, followed by the undated inbox captures. Nothing from the past, and no calendar blocks — the Apple Sync note's Calendar section never appears here. The execution surface and the triage queue, one working list (merged 2026-08-22).
+The panel's first section: open tasks scheduled or due today, followed by undated inbox captures and machine-managed reminders. Nothing from the past, and no calendar blocks — the Apple Sync note's Calendar section never appears here. The execution surface and the triage queue, one working list (merged 2026-08-22).
 _Avoid_: Today (renamed 2026-08-22; the dated-today rule is unchanged)
 
 **Overdue & slipped**:
 Open tasks due before today, or scheduled before today outside the Apple Sync note. A repair queue: reschedule, complete, or cancel.
 
 **Inbox**:
-Undated open tasks under a daily note's `# Inbox` heading, rendered at the tail of the To-do section. A triage queue: give each task a date, a project, or a cancellation. Checkboxes under other headings are not Daily Task Panel's business. An internal name only: the panel presents this surface as part of To-do, and user-facing copy (menu items, notices, empty states) says To-do, never inbox (#13).
+Undated open tasks under the configured daily-note inbox heading, plus undated reminders from the configured machine-managed note, rendered at the tail of the To-do section. Daily captures form a triage queue: give each a date, a project, or a cancellation. Managed reminders keep their source and allow check-off and navigation only; dates and text are edited in the source app. Other daily-note headings remain outside this projection. An internal name only: the panel presents this surface as part of To-do, and user-facing copy (menu items, notices, empty states) says To-do, never inbox (#13).
 _Avoid_: capture list, unsorted, inbox (in UI copy)
 
 **Upcoming**:
@@ -143,4 +143,4 @@ The one configured note some external tool rewrites on its own schedule (optiona
 _Avoid_: Apple Sync path (as the concept's name — Apple Sync is one instance)
 
 **Apple Sync note**:
-`Indexes/System/Apple Sync.md`, machine-written every 15 minutes by apple-planner-sync — the machine-managed note in Sean's vault. Its Reminders section (📅) is Daily Task Panel's business; its Calendar section (⏳ time blocks) is Day Planner's world and is never projected. Check-off propagates back to Apple Reminders; any other edit gets clobbered on next sync.
+`Indexes/System/Apple Sync.md`, machine-written every 15 minutes by apple-planner-sync — the machine-managed note in Sean's vault. Its Reminders section is Daily Task Panel's business (📅 reminders follow their dates; undated reminders appear in To-do); its Calendar section (⏳ time blocks) is Day Planner's world and is never projected. Check-off propagates back to Apple Reminders; any other edit gets clobbered on next sync.
