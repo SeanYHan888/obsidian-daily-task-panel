@@ -1,5 +1,7 @@
 import {FuzzySuggestModal, Modal} from 'obsidian'
 
+import {newProjectRow} from '../core/actions'
+
 import type {App, FuzzyMatch} from 'obsidian'
 import type {ProjectChoice, Prompter} from '../core/actions'
 import type {ProjectMeta} from '../core/types'
@@ -39,6 +41,13 @@ const prompt = <T>(
     })(app).open()
   })
 
+/**
+ * Enter submits — unless it is confirming an IME composition (a pinyin
+ * candidate, say), which belongs to the field: submitting there would take
+ * the half-typed letters as the answer.
+ */
+const isSubmitKey = (ev: KeyboardEvent): boolean => ev.key === 'Enter' && !ev.isComposing
+
 const submitButton = (modal: Modal, label: string, onClick: () => void) => {
   const button = modal.contentEl.createEl('button', {
     text: label,
@@ -69,7 +78,7 @@ export const askDate = (
     input.value = opts.defaultDate
     const go = () => submit(input.value || null)
     input.addEventListener('keydown', ev => {
-      if (ev.key === 'Enter') go()
+      if (isSubmitKey(ev)) go()
     })
     submitButton(modal, opts.submitLabel ?? 'Set start', go)
     input.focus()
@@ -92,7 +101,7 @@ export const askText = (
       if (value) submit(value)
     }
     input.addEventListener('keydown', ev => {
-      if (ev.key === 'Enter') go()
+      if (isSubmitKey(ev)) go()
     })
     submitButton(modal, opts.submitLabel, go)
     input.focus()
@@ -113,20 +122,21 @@ export const pickProject = (
     new (class extends FuzzySuggestModal<ProjectChoice> {
       constructor() {
         super(app)
-        this.setPlaceholder('Move to project')
+        this.setPlaceholder('Move to project, or type a new name')
       }
       getItems(): ProjectChoice[] {
         return projects.map(project => ({kind: 'project', project}))
       }
-      // "+ New project" is pinned outside the fuzzy filter: typing a
-      // fresh project's name must not filter away the only way to create
-      // it. The typed query rides along as the suggested name.
+      // "+ New project" sits outside the fuzzy filter — typing a fresh
+      // project's name must not filter away the only way to create it — at
+      // the place core's rule gives it: first in an empty picker, after the
+      // matches once a name is typed.
       getSuggestions(query: string): FuzzyMatch<ProjectChoice>[] {
-        const name = query.trim()
-        return [
-          ...super.getSuggestions(query),
-          {item: {kind: 'new', name: name || undefined}, match: {score: 0, matches: []}},
-        ]
+        const matches = super.getSuggestions(query)
+        const row = newProjectRow(query, projects)
+        if (!row) return matches
+        const create = {item: row.choice, match: {score: 0, matches: []}}
+        return row.placement === 'first' ? [create, ...matches] : [...matches, create]
       }
       getItemText(item: ProjectChoice): string {
         return item.kind === 'new'

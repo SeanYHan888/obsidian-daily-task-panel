@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {performAction, performDrop} from '../src/core/actions'
+import {newProjectRow, performAction, performDrop} from '../src/core/actions'
 import {sectionAffordances} from '../src/core/sections'
 import {fakePorts, fakePrompter} from './fakes/ports'
 
@@ -171,6 +171,30 @@ describe('task acts', () => {
       kind: 'select',
       task: t,
     })
+  })
+})
+
+describe('the project picker’s create row', () => {
+  const projects = [project('beacon-fire'), project('llm-study')]
+
+  it('leads an empty picker, where a long list would push it below the fold', () => {
+    expect(newProjectRow('', projects)).toEqual({choice: {kind: 'new'}, placement: 'first'})
+    expect(newProjectRow('   ', projects)).toEqual({choice: {kind: 'new'}, placement: 'first'})
+  })
+
+  it('follows the matches once a name is typed, carrying the name', () => {
+    expect(newProjectRow(' trip planning ', projects)).toEqual({
+      choice: {kind: 'new', name: 'trip planning'},
+      placement: 'last',
+    })
+    expect(newProjectRow('学习计划', projects)).toEqual({
+      choice: {kind: 'new', name: '学习计划'},
+      placement: 'last',
+    })
+  })
+
+  it('is withheld when the name already is a project', () => {
+    expect(newProjectRow('Beacon-Fire', projects)).toBeNull()
   })
 })
 

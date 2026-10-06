@@ -32,6 +32,25 @@ export type {Subject} from './types'
 /** The one way to pick a project or start a new one; the name typed so far rides along. */
 export type ProjectChoice = {kind: 'project'; project: ProjectMeta} | {kind: 'new'; name?: string}
 
+/**
+ * Where the project picker offers "+ New project". An empty query pins it
+ * first: behind a long project list a row at the tail sits below the fold,
+ * and the only way to start a project goes unseen. A typed query lists its
+ * matches first (picking a project by a few letters is the common case) and
+ * the create row after them, carrying the name. A name that already is a
+ * project offers no create row — creating it would only move into that one.
+ */
+export const newProjectRow = (
+  query: string,
+  projects: readonly ProjectMeta[],
+): {choice: ProjectChoice; placement: 'first' | 'last'} | null => {
+  const name = query.trim()
+  if (!name) return {choice: {kind: 'new'}, placement: 'first'}
+  const key = name.toLowerCase()
+  if (projects.some(p => p.name.toLowerCase() === key)) return null
+  return {choice: {kind: 'new', name}, placement: 'last'}
+}
+
 /** What the actions ask the user; the shell answers with modals, tests with a script. */
 export type Prompter = {
   askText(opts: {title: string; placeholder: string; submitLabel: string; value?: string}): Promise<string | null>

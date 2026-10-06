@@ -19,7 +19,7 @@ npm ci
 npm run dev
 ```
 
-`npm run dev` starts an esbuild watch that writes `main.js`, `manifest.json` and `styles.css` straight into a dev vault's plugin folder. By default that is `../taskflow-demo-vault/.obsidian/plugins/daily-task-panel/`; set `DTP_DEV_PLUGIN_DIR` to use another vault. Install the [Hot Reload](https://github.com/pjeby/hot-reload) plugin in that vault and the panel reloads on every rebuild. Enable the Tasks plugin there too, or the panel has nothing to read.
+`npm run dev` starts an esbuild watch that writes `main.js`, `manifest.json` and `styles.css` straight into a dev vault's plugin folder. By default that is `../daily-task-panel-demo-vault/.obsidian/plugins/daily-task-panel/`; set `DTP_DEV_PLUGIN_DIR` to use another vault. Install the [Hot Reload](https://github.com/pjeby/hot-reload) plugin in that vault and the panel reloads on every rebuild. Enable the Tasks plugin there too, or the panel has nothing to read.
 
 ## Checks
 

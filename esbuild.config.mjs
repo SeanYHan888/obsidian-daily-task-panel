@@ -17,7 +17,7 @@ const prod = process.argv[2] === 'production'
 // Production deploys to the live vault go through `npm run deploy:prod`.
 const devPluginDir =
   process.env.DTP_DEV_PLUGIN_DIR ??
-  path.resolve('../taskflow-demo-vault/.obsidian/plugins/daily-task-panel')
+  path.resolve('../daily-task-panel-demo-vault/.obsidian/plugins/daily-task-panel')
 
 const options = {
   banner: {
