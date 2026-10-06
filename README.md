@@ -134,7 +134,7 @@ Sections are disjoint views of one thing — the date on the line. Tasks never "
 
 **Drag and drop** (desktop). Drag any row onto the **To-do** section to schedule it today, onto **Upcoming** to pick a future date, or onto a **project** to move the line (with its subtasks) into that note. Only targets whose drop would actually do something light up.
 
-**Bulk triage.** Choose *Select tasks* in the To-do or Projects `…` menu, or *Select multiple* on any row's menu to start with that task in hand — checkboxes appear across the working list and the backlogs. A bar at the panel's foot shows the count with *move to project* and *set start* (folded into one `…` on a narrow panel). `Esc` or the `✕` exits.
+**Bulk triage.** Choose *Select tasks* in the To-do or Projects `…` menu, or *Select multiple* on any row's menu to start with that task in hand — checkboxes appear across the working list and the backlogs. A bar at the panel's foot shows the count with *move to project* and *set start* (folded into one `…` on a narrow panel); right-clicking any selected task opens the same acts for the whole selection. `Esc` or the `✕` exits.
 
 <img src="images/panel-select.png" alt="Select mode: two inbox captures selected, with the move-to-project and set-start bar at the panel's foot" width="420">
 

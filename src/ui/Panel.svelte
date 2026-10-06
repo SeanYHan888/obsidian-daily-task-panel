@@ -9,6 +9,7 @@
   import {EMPTY_LAYOUT} from '../core/layout'
   import {canPlace, movableProjects as movableBand, placementEdge} from '../core/order'
   import {countTaskTree, locationKey} from '../core/hierarchy'
+  import {rowMenuRequest} from '../core/menus'
   import {chipLabel} from '../core/schedule'
   import {
     projectFolded,
@@ -134,7 +135,16 @@
       dragTask = null
       dragOverProject = null
     },
-    callbacks,
+    // A row's right-click goes through core's rule: a selected row opens
+    // the whole selection's menu, so its acts take every selected task.
+    callbacks: {
+      ...callbacks,
+      menu: (request, ev) =>
+        callbacks.menu(
+          request.kind === 'row' ? rowMenuRequest(request.task, request.state, selectedTasks) : request,
+          ev,
+        ),
+    },
   })
 
   const wip = $derived(wipBadge(data.sections, data.wipLimit, data.pacingMode))

@@ -382,6 +382,22 @@ export type MenuRequest =
   | {kind: 'section'; key: SectionKey; selecting: boolean}
   | {kind: 'project'; project: ProjectMeta}
 
+/**
+ * Which menu a right-click on a row opens. A selected row in a selection of
+ * several speaks for the selection — every file manager's rule: the menu
+ * acts on what is selected, so Move to project takes all of it, not just the
+ * row under the pointer. An unselected row, or a selection of one, keeps
+ * its own menu.
+ */
+export const rowMenuRequest = (
+  task: Task,
+  state: SelectMenuConfig,
+  selection: readonly Task[],
+): MenuRequest =>
+  state.selected && selection.length > 1
+    ? {kind: 'selection', tasks: [...selection]}
+    : {kind: 'row', task, state}
+
 /** The menus' slice of the world: the layout's folders and note, the projection's day and groups, the pacing mode. */
 export type MenuContext = ScheduleMenuConfig &
   MachineNoteConfig & {pacingMode: PacingMode; groups: readonly ProjectGroup[]}

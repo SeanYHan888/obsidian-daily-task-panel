@@ -4,6 +4,7 @@ import {
   dueMenuSpec,
   menuFor,
   projectMenuSpec,
+  rowMenuRequest,
   scheduleMenuSpec,
   sectionMenuSpec,
   selectBarMenuSpec,
@@ -366,4 +367,27 @@ test('menuFor: one request in, the spec and its subject out', () => {
   const header = menuFor({kind: 'project', project}, ctx)
   assert.deepEqual(header.subject, {kind: 'project', project})
   assert.deepEqual(header.spec, projectMenuSpec(project, {pacingMode: 'hybrid', pressing: false, canMove: {up: false, down: false}}))
+})
+
+test('a right-click on a selected row opens the whole selection’s menu', () => {
+  const a = task({description: 'a'})
+  const b = task({description: 'b'})
+  const c = task({description: 'c'})
+  const request = rowMenuRequest(a, {selectable: true, selected: true}, [a, b, c])
+  assert.deepEqual(request, {kind: 'selection', tasks: [a, b, c]})
+})
+
+test('an unselected row, or a selection of one, keeps its own menu', () => {
+  const a = task({description: 'a'})
+  const b = task({description: 'b'})
+  assert.deepEqual(rowMenuRequest(a, {selectable: true, selected: false}, [b]), {
+    kind: 'row',
+    task: a,
+    state: {selectable: true, selected: false},
+  })
+  assert.deepEqual(rowMenuRequest(a, {selectable: true, selected: true}, [a]), {
+    kind: 'row',
+    task: a,
+    state: {selectable: true, selected: true},
+  })
 })
